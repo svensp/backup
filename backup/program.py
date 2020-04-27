@@ -41,7 +41,8 @@ class Program:
             command.printDescription()
 
     def __getCommands(self):
-        commands = {
-                "resorts": CommandContainer.resorts()
-        }
+        commands = {}
+
+        CommandContainer.resorts().register(commands)
+
         return commands

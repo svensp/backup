@@ -1,7 +1,7 @@
 import os
 from paramiko.transport import Transport
 from paramiko.sftp_client import SFTPClient
-from paramiko.pkey import PKey
+from paramiko.hostkeys import HostKeyEntry
 from .common import Resort
 
 class HetznerStorage:
@@ -11,8 +11,7 @@ class HetznerStorage:
         self.__username = os.environ.get('HETZNER_USER')
         self.__password = os.environ.get('HETZNER_PASSWORD')
         self.__path = os.environ.get('HETNZER_PATH', '/backups')
-        self.__hostKey = PKey(data=os.environ.get('HETZNER_HOSTKEY'))
-        self.__hostKeyType = data=os.environ.get('HETZNER_HOSTKEY_TYPE', 'ssh-rsa')
+        self.__hostKey = os.environ.get('HETZNER_HOSTKEY')
         self.__transport = Transport( (self.__host, self.__port) )
 
     def load(self):
@@ -20,9 +19,19 @@ class HetznerStorage:
         pass
 
     def __connect(self):
-        self.__transport.connect(None, self.__username, self.__password)
+        hostKey = self.__getHostKey()
+        self.__transport.connect(hostKey, self.__username, self.__password)
         self.__sftp = SFTPClient.from_transport(self.__transport)
         return self
+
+    def __getHostKey(self):
+        if self.__hostKey == 'any':
+            return None
+
+        hostKeyEntry = HostKeyEntry.from_line(self.__hostKey)
+            
+        return hostKeyEntry.key
+            
 
     def getResorts(self):
         directories = self.__sftp.listdir( self.__path )
