@@ -38,5 +38,21 @@ class HetznerStorage:
 
         resorts = []
         for directory in directories:
-            resorts.append( Resort().name(directory) )
+            resorts.append( self.buildResort(directory) )
+
         return resorts
+    
+    def buildResort(self, resortName):
+        resort = Resort().name(resortName)
+
+        resortDirectories = self.__sftp.listdir( self.__path+'/'+resortName )
+        if 'mysql' in resortDirectories:
+            resort.withMySQL()
+
+        if 'postgres' in resortDirectories:
+            resort.withPostgres()
+
+        if 'files' in resortDirectories:
+            resort.withFiles()
+
+        return resort

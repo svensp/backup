@@ -12,4 +12,4 @@ class ResortsCommand(Command):
     def run(self):
         resorts = self.__storage.getResorts()
         for resort in resorts:
-            print("- "+resort.getName())
+            resort.print()
