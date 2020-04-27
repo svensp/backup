@@ -1,2 +1,2 @@
 # backup
-Manage Bakcups on a Hetzner Storagebox
+Manage Backups on a Hetzner Storagebox
