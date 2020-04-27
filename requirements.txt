@@ -1,2 +1,2 @@
 dependency-injector
-paramiko
+paramiko[all]

@@ -1,6 +1,7 @@
 class Resort:
-    def __init__(self, name):
+    def name(self, name):
         self.__name = name
+        return self
 
     def getName(self):
         return self.__name
