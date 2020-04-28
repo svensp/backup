@@ -32,6 +32,11 @@ class HetznerStorage:
             
         return hostKeyEntry.key
             
+    def createResort(self, resortName):
+        self.__sftp.mkdir( self.__path+'/'+resortName, 0o755)
+
+    def removeResort(self, resortName):
+        self.__sftp.rmdir( self.__path+'/'+resortName)
 
     def getResorts(self):
         directories = self.__sftp.listdir( self.__path )

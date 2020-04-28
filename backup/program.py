@@ -30,7 +30,11 @@ class Program:
             self.help()
             return 0
 
-        command.storage(self.__storage).run()
+        arguments = sys.argv.copy()
+        arguments.remove(arguments[0])
+        arguments.remove(arguments[0])
+
+        command.storage(self.__storage).run(arguments)
 
     def help(self):
         print(sys.argv[0]+" COMMAND\n")
@@ -43,6 +47,8 @@ class Program:
     def __getCommands(self):
         commands = {}
 
-        CommandContainer.resorts().register(commands)
+        CommandContainer.resortsList().register(commands)
+        CommandContainer.resortsCreate().register(commands)
+        CommandContainer.resortsRemove().register(commands)
 
         return commands
