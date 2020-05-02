@@ -1,7 +1,15 @@
 class Command:
+    def usePassword(self):
+        return False
+
     def register(self, dictionary):
         dictionary[self._name] = self
         return self
+
+    def storage(self, storage):
+        self._storage = storage
+        return self
+
 
     def _description(self, shortDescription, longDescription = None):
         if longDescription is None:

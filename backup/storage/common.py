@@ -1,33 +1,66 @@
 class Resort:
     def __init__(self):
-        self.__mysql = False
-        self.__postgres = False
-        self.__files = False
+        self._mysql = False
+        self._postgres = False
+        self._borg = False
 
     def name(self, name):
-        self.__name = name
+        self._name = name
+        return self
+
+    def appendName(self, text):
+        return text+self._name
+        return self
+
+    def storage(self, storage):
+        self._storage = storage
         return self
 
     def withMySQL(self):
-        self.__mysql = True
+        self._mysql = True
         return self
 
     def withPostgres(self):
-        self.__postgres = True
+        self._postgres = True
         return self
 
-    def withFiles(self):
-        self.__files = True
+    def initBorg(self, copies):
+        try:
+            self._storage.resort(self._name).createAdapter('files')
+        except OSError:
+            print("Files already exists. Ignoring")
+        self._storage.rebuildResort(self)
+
+        self._borg.init(copies)
+
+    def withBorg(self, borg):
+        borg.resort(self)
+        self._borg = borg
+        return self
+
+    def createFolder(self, folderName):
+        self._storage.resort(self._name).adapter(self._currentAdapter).createFolder(folderName)
+        return self
+
+    def adapter(self, adapater):
+        self._currentAdapter = adapater
         return self
 
     def print(self):
-        print("- "+self.__name)
+        print("- "+self._name)
 
-        if self.__files:
-            print("  - files")
+        if self._borg:
+            print("  - borg filebackup")
 
-        if self.__mysql:
+        if self._mysql:
             print("  - mysql")
 
-        if self.__postgres:
+        if self._postgres:
             print("  - postgres")
+
+class Error(Exception):
+    pass
+
+class NoSuchResortError(Error):
+    def __init__(self, resortName):
+        self.resortName = resortName

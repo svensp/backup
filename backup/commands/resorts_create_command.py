@@ -3,11 +3,7 @@ from .command import Command
 class ResortsCreateCommand(Command):
     def __init__(self):
         self._name = "resorts:create"
-        self._description( 'create a new resport')
-
-    def storage(self, storage):
-        self.__storage = storage
-        return self
+        self._description( 'create a new resort')
 
     def run(self, parameters):
         if len(parameters) < 1:
@@ -16,7 +12,7 @@ class ResortsCreateCommand(Command):
             
         resortName = parameters[0]
         print("Creating resort "+resortName)
-        self.__storage.createResort(resortName)
+        self._storage.createResort(resortName)
         print("Created")
 
     def printHelp(self):

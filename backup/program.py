@@ -17,24 +17,33 @@ class Program:
             return 0
 
         self.setUp()
+        command = self.__findCommand(sys.argv[1])
+        if command is None:
+            return 1
+
+        if command.usePassword():
+            self.__storage.usePassword()
+            
         self.__storage.load()
 
 
-        return self.__runCommand(sys.argv[1])
+        return self.__runCommand(command)
 
-    def __runCommand(self, commandName):
-        commands = self.__getCommands()
-        try:
-            command = commands[commandName]
-        except KeyError:
-            self.help()
-            return 0
-
+    def __runCommand(self, command):
         arguments = sys.argv.copy()
         arguments.remove(arguments[0])
         arguments.remove(arguments[0])
 
         command.storage(self.__storage).run(arguments)
+
+    def __findCommand(self, commandName):
+        commands = self.__getCommands()
+        try:
+            command = commands[commandName]
+            return command
+        except KeyError:
+            self.help()
+            return None
 
     def help(self):
         print(sys.argv[0]+" COMMAND\n")
@@ -47,8 +56,10 @@ class Program:
     def __getCommands(self):
         commands = {}
 
+        CommandContainer.storageAuth().register(commands)
         CommandContainer.resortsList().register(commands)
         CommandContainer.resortsCreate().register(commands)
         CommandContainer.resortsRemove().register(commands)
+        CommandContainer.filesCreate().register(commands)
 
         return commands

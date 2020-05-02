@@ -5,10 +5,6 @@ class ResortsRemoveCommand(Command):
         self._name = "resorts:remove"
         self._description( 'remove a resort')
 
-    def storage(self, storage):
-        self.__storage = storage
-        return self
-
     def run(self, parameters):
         if len(parameters) < 1:
             print("No confirmation given.")
@@ -28,7 +24,7 @@ class ResortsRemoveCommand(Command):
             
         resortName = parameters[1]
         print("Removing resort "+resortName)
-        self.__storage.removeResort(resortName)
+        self._storage.removeResort(resortName)
         print("removed")
 
     def printHelp(self):
