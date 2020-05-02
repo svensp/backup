@@ -4,6 +4,7 @@ from paramiko.sftp_client import SFTPClient
 from paramiko.rsakey import RSAKey
 from paramiko.pkey import PublicBlob
 from paramiko.hostkeys import HostKeyEntry
+from paramiko.agent import Agent
 from .common import Resort, NoSuchResortError
 from ..adapters.borg import Borg
 
@@ -150,7 +151,13 @@ class HetznerStorage:
             
 
     def __loadKey(self):
-        return RSAKey.from_private_key_file(self.__keyFilePath)
+        try:
+            return RSAKey.from_private_key_file(self.__keyFilePath)
+        except Exception:
+            print("Failed to load ssh key - trying to connect to ssh agent")
+            agent = Agent()
+            keys = agent.get_keys()
+            return keys[0]
     
     def __publicRFC4716(self, privateKey):
         # NOte: rfc4716 says 72 bytes at most but ssh-keygen into rfc4716
