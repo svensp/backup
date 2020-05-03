@@ -122,6 +122,17 @@ class HetznerStorage:
             ]) 
         self.__sftp.mkdir( path, 0o755)
 
+    def listFolder(self, path):
+        pathParts = [
+            self.__path,
+            self._currentResort,
+            self.currentAdapter,
+            ]
+        if path is not None:
+            pathParts.append(path)
+        path = '/'.join(pathParts) 
+        return self.__sftp.listdir( path )
+
     def copyId(self):
         if '.ssh' not in self.__sftp.listdir('/'):
             self.__sftp.mkdir('/.ssh', 0o700)
@@ -130,7 +141,12 @@ class HetznerStorage:
 
         with self.__sftp.open('/.ssh/authorized_keys', 'r') as f:
             authorizedKeys = f.read()
-        fileContent = str(authorizedKeys).replace('\\n', '\n')
+        fileContent = authorizedKeys.decode('utf-8')
+
+        if fileContent[ -1 ] != '\n':
+            print("File does not end in newline - adding")
+            with self.__sftp.open('/.ssh/authorized_keys', 'a+') as f:
+                f.write('\n')
 
         rfcPublicKey = self.__publicRFC4716(privateKey)
         publicKey = self.__publicKey(privateKey)
@@ -138,14 +154,14 @@ class HetznerStorage:
         if rfcPublicKey not in fileContent:
             print("public key in rfc format not in authorized keys - inserting")
             with self.__sftp.open('/.ssh/authorized_keys', 'a+') as f:
-                f.write('\n'+rfcPublicKey)
+                f.write(rfcPublicKey+'\n')
         else:
             print('public key in rfc format already present')
 
         if publicKey not in fileContent:
             print("public key not in authorized keys - inserting")
             with self.__sftp.open('/.ssh/authorized_keys', 'a+') as f:
-                f.write('\n'+publicKey)
+                f.write(publicKey+'\n')
         else:
             print('public key already present')
             

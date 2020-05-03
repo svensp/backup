@@ -24,6 +24,22 @@ class Resort:
         self._postgres = True
         return self
 
+    def passAdapters(self, receiver):
+        try:
+            receiver.setBorg(self._borg)
+        except AttributeError:
+            pass
+
+        try:
+            receiver.setMySQL(self._mysql)
+        except AttributeError:
+            pass
+
+        try:
+            receiver.setPostgres(self._postgres)
+        except AttributeError:
+            pass
+
     def initBorg(self, copies):
         try:
             self._storage.resort(self._name).createAdapter('files')
@@ -41,6 +57,9 @@ class Resort:
     def createFolder(self, folderName):
         self._storage.resort(self._name).adapter(self._currentAdapter).createFolder(folderName)
         return self
+
+    def listFolders(self, path=None):
+        return self._storage.resort(self._name).adapter(self._currentAdapter).listFolder(path)
 
     def adapter(self, adapater):
         self._currentAdapter = adapater

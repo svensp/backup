@@ -36,47 +36,127 @@ class Borg:
         return self
 
     def init(self, copies):
-        resortNumber = 1
-        while resortNumber <= copies:
-            self.__createRepository(resortNumber)
-            resortNumber += 1
+        repositoryNumber = 1
+        while repositoryNumber <= copies:
+            self.__createRepository(repositoryNumber)
+            repositoryNumber += 1
         print("Created")
 
-        resortNumber = 1
-        while resortNumber <= copies:
-            self.__initRepository(resortNumber)
-            resortNumber += 1
+        repositoryNumber = 1
+        while repositoryNumber <= copies:
+            self.__initRepository(repositoryNumber)
+            repositoryNumber += 1
 
-    def __createRepository(self, resortNumber):
+    def __createRepository(self, repositoryNumber):
         try:
-            fileRepository = 'repo'+str(resortNumber)
+            fileRepository = 'repo'+str(repositoryNumber)
             self._resort.adapter('files').createFolder(fileRepository)
-            print("Folder for Repository "+str(resortNumber)+" created")
+            print("Folder for Repository "+str(repositoryNumber)+" created")
         except OSError:
-            print("Folder for Repository "+str(resortNumber)+" already exists")
+            print("Folder for Repository "+str(repositoryNumber)+" already exists")
 
-    def __initRepository(self, resortNumber):
-        repo = self.__makeRepo(resortNumber)
-        print("Initializing Repository "+str(resortNumber))
-        print(self._keyFilePath)
-        completedProcess = subprocess.run([
-            'borgbackup',
+    def __initRepository(self, repositoryNumber):
+        repo = self.__makeRepo(repositoryNumber)
+        print("Initializing Repository "+str(repositoryNumber))
+        completedProcess = self.command([
             'init',
             '-e',
             self._encryptionMode,
             repo
-            ], capture_output=True, env={
-                'BORG_NEW_PASSPHRASE': self._borgPassword,
-                'BORG_RSH': "ssh -o StrictHostKeyChecking=accept-new -i "+self._keyFilePath
-                })
+            ], repositoryNumber)
         if completedProcess.returncode != 0:
             print("Process did not return success:")
             print("Code: "+ str(completedProcess.returncode))
             print( str(completedProcess.stdout) )
             print( str(completedProcess.stderr) )
             return self
-        print("Initialized Repository "+str(resortNumber)+" successfully")
+        print("Initialized Repository "+str(repositoryNumber)+" successfully")
         return self
+
+    def backup(self, name, target, repositoryNumber):
+        repo = self.__makeRepo(repositoryNumber)
+        print("Backing up "+target+" to Repository "+str(repositoryNumber))
+        completedProcess = self.command([
+            'create',
+            '::'+name,
+            target
+            ], repositoryNumber)
+        if completedProcess.returncode != 0:
+            print("Process did not return success:")
+            print("Code: "+ str(completedProcess.returncode))
+            print( completedProcess.stdout.decode('utf-8') )
+            print( completedProcess.stderr.decode('utf-8') )
+            return self
+        print("Backup of "+target+" to Repository "+str(repositoryNumber)+" finished successfully")
+        return self
+
+    def umount(self, target):
+        completedProcess = subprocess.run([
+            'fusermount',
+            '-u',
+            target
+            ],
+            capture_output=True
+            )
+        if completedProcess.returncode != 0:
+            print("Failed to unmount "+target)
+            print("Code: "+ str(completedProcess.returncode))
+            print( completedProcess.stdout.decode('utf-8') )
+            print( completedProcess.stderr.decode('utf-8') )
+            return self
+
+    def mount(self, name, target, repositoryNumber):
+        repo = self.__makeRepo(repositoryNumber)
+        print("Mounting backup "+name+" from Repository "+str(repositoryNumber)+' to '+target)
+        completedProcess = self.command([
+            'mount',
+            '::'+name,
+            target
+            ], repositoryNumber)
+        if completedProcess.returncode != 0:
+            print("Process did not return success:")
+            print("Code: "+ str(completedProcess.returncode))
+            print( completedProcess.stdout.decode('utf-8') )
+            print( completedProcess.stderr.decode('utf-8') )
+            return self
+        print("Mounted backup "+name+" from Repository "+str(repositoryNumber)+' to '+target)
+        return self
+
+
+    def list(self, repositoryNumber):
+        repo = self.__makeRepo(repositoryNumber)
+        print("Listing file backups in repository "+repositoryNumber)
+        completedProcess = self.command([
+            'list',
+            '::'
+            ], repositoryNumber)
+        if completedProcess.returncode != 0:
+            print("Process did not return success:")
+            print("Code: "+ str(completedProcess.returncode))
+            print( completedProcess.stdout.decode('utf-8') )
+            print( completedProcess.stderr.decode('utf-8') )
+            return self
+        return completedProcess.stdout.decode('utf-8')
+
+    def command(self, args, repoNumber):
+        return subprocess.run(
+                ['borgbackup'] + args,
+                capture_output=True,
+                env={
+                'BORG_NEW_PASSPHRASE': self._borgPassword,
+                'BORG_PASSPHRASE': self._borgPassword,
+                'BORG_REPO': self.__makeRepo(repoNumber),
+                'BORG_RSH': "ssh -o StrictHostKeyChecking=accept-new -i "+self._keyFilePath
+                })
 
     def __makeRepo(self, number):
         return 'ssh://'+self._user+'@'+self._host+':'+str(self._port)+'/.'+self._path+'/repo'+str(number)
+
+    def getRepositories(self):
+        repos = []
+        for directoryName in self._resort.adapter('files').listFolders():
+            start = len('repo')
+            end = len(directoryName)
+            repos.append( directoryName[start:end] )
+
+        return repos
