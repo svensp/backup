@@ -40,6 +40,14 @@ class Resort:
         except AttributeError:
             pass
 
+    def initMySQL(self, copies):
+        try:
+            self._storage.resort(self._name).createAdapter('mysql')
+        except OSError:
+            print("MySQL already exists. Ignoring")
+        self._storage.rebuildResort(self)
+
+
     def initBorg(self, copies):
         try:
             self._storage.resort(self._name).createAdapter('files')

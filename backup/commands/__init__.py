@@ -10,6 +10,7 @@ from .files_list_command import FilesListCommand
 from .files_mount_command import FilesMountCommand
 from .files_umount_command import FilesUmountCommand
 from .files_prune_command import FilesPruneCommand
+from .mysql_create_command import MysqlCreateCommand
 
 class CommandContainer(containers.DeclarativeContainer):
     storageAuth = providers.Factory(StorageAuthCommand)
@@ -24,3 +25,5 @@ class CommandContainer(containers.DeclarativeContainer):
     filesMount = providers.Factory(FilesMountCommand)
     filesUmount = providers.Factory(FilesUmountCommand)
     filesPrune = providers.Factory(FilesPruneCommand)
+
+    mysqlCreate = providers.Factory(MysqlCreateCommand)

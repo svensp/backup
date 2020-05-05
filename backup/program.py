@@ -66,5 +66,6 @@ class Program:
         CommandContainer.filesMount().register(commands)
         CommandContainer.filesUmount().register(commands)
         CommandContainer.filesPrune().register(commands)
+        CommandContainer.mysqlCreate().register(commands)
 
         return commands
