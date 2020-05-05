@@ -22,6 +22,7 @@ class HetznerStorage:
         self.__keyFilePath = os.environ.get('HETZNER_SSHKEY', defaultSSHKeyFilePath)
         self.__transport = Transport( (self.__host, self.__port) )
         self._usePassword = False
+        self.uploadChunkSize = int(os.environ.get('UPLOAD_CHUNK_SIZE', '2097152'))
 
     def load(self):
         self.__connect()
@@ -167,6 +168,53 @@ class HetznerStorage:
         path = '/'.join(pathParts) 
         with self.__sftp.file( path ) as file:
             return file.read()
+
+    def upload(self, localPath, remotePath, verbose=False):
+        fullRemotePath = '/'.join([
+            self.__path,
+            self._currentResort,
+            self.currentAdapter,
+            remotePath,
+            ])
+
+        if os.path.isdir(localPath):
+            self.__uploadDirectory(localPath, fullRemotePath, verbose)
+        else:
+            self.__uploadFile(localPath, fullRemotePath, verbose)
+
+    def __uploadDirectory(self, localPath, remotePath, verbose=False):
+        mustMake = True
+        try:
+            remotePathStatus = self.__sftp.stat(remotePath)
+            if not stat.S_ISDIR(remotePathStatus.st_mode):
+                mustMake = False
+        except FileNotFoundError:
+            pass
+                
+        if mustMake:
+            self.__sftp.mkdir(remotePath)
+
+        for localFileName in os.listdir( localPath ):
+            localFilePath = localPath + '/' + localFileName
+            remoteFilePath = remotePath + '/' + localFileName
+            if os.path.isdir(localFilePath):
+                if verbose:
+                    print("Recursing into "+localFilePath+" as "+remoteFilePath)
+                self.__uploadDirectory(localFilePath, remoteFilePath, verbose)
+            else:
+                self.__uploadFile(localFilePath, remoteFilePath, verbose)
+        pass
+
+    def __uploadFile(self, localPath, remotePath, verbose=False):
+        if verbose:
+            print("Uploading "+localPath+" as "+remotePath)
+        with open(localPath, 'rb') as localFile:
+            with self.__sftp.file(remotePath, 'w') as remoteFile:
+                while True:
+                    data = localFile.read(self.uploadChunkSize)
+                    if not data:
+                        break
+                    remoteFile.write(data)
 
     def copyId(self):
         if '.ssh' not in self.__sftp.listdir('/'):

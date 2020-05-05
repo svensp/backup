@@ -72,6 +72,10 @@ class Resort:
     def fileContent(self, path):
         return self._storage.resort(self._name).adapter(self._currentAdapter).fileContent(path)
 
+    def upload(self, localPath, remotePath):
+        self._storage.resort(self._name).adapter(self._currentAdapter) \
+                .upload(localPath, remotePath, True)
+
     def adapter(self, adapater):
         self._currentAdapter = adapater
         return self

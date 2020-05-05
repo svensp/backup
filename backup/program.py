@@ -68,5 +68,6 @@ class Program:
         CommandContainer.filesPrune().register(commands)
         CommandContainer.mysqlCreate().register(commands)
         CommandContainer.mysqlList().register(commands)
+        CommandContainer.mysqlBackup().register(commands)
 
         return commands

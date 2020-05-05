@@ -5,6 +5,7 @@ RUN apt-get update \
       python3 \
       python3-pip \
       borgbackup \
+      mariadb-backup \
    && pip3 install paramiko-ng \
    && rm -Rf /var/lib/apt/lists/*
 

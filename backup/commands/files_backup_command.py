@@ -1,6 +1,5 @@
 from .command import Command
 from datetime import datetime
-import subprocess
 
 class FilesBackupCommand(Command):
     def __init__(self):
