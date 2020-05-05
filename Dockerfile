@@ -6,7 +6,7 @@ RUN apt-get update \
       python3-pip \
       borgbackup \
       mariadb-backup \
-   && pip3 install paramiko-ng \
+   && pip3 install paramiko-ng pyAesCrypt \
    && rm -Rf /var/lib/apt/lists/*
 
 ENV PATH /opt/cloudbackup:$PATH

@@ -1,9 +1,11 @@
 import configparser
-import tempfile
 import os
-import os.path
-import subprocess
 import resource
+import shutil
+import subprocess
+import tarfile
+import tempfile
+import pyAesCrypt
 
 class MySQLBackup:
     def __init__(self):
@@ -17,8 +19,21 @@ class MySQLBackup:
         self._parent = parent
         return self
 
-    def full(self, full):
-        self._full = full
+    def parseInfo(self, infoContent):
+        dummyHeader = '[main]\n'
+        iniFile = dummyHeader+infoContent
+        xtrabackupInfoContent = configparser.ConfigParser()
+        xtrabackupInfoContent.read_string(iniFile)
+
+        isFullBackup = False
+        startingPoint = int(xtrabackupInfoContent['main']['innodb_from_lsn'])
+        if startingPoint == 0:
+            isFullBackup = True
+        self._full = isFullBackup
+        self._startingPoint = startingPoint
+
+        endingPoint = int(xtrabackupInfoContent['main']['innodb_to_lsn'])
+        self._endingPoint = endingPoint
         return self
 
     def print(self):
@@ -35,6 +50,9 @@ class MySQL:
         self._mysqlUsername = os.environ.get('MYSQL_USERNAME', 'backup')
         self._mysqlPassword = os.environ.get('MYSQL_PASSWORD')
         self._backupCommand = os.environ.get('MYSQL_COMMAND', 'mariabackup')
+        self._bufferSize = int(os.environ.get('MYSQL_ENC_BUFSIZE', 64 * 1024))
+        self._password = os.environ.get('MYSQL_ENC_PASSWORD')
+
 
     def resort(self, resort):
         self._resort = resort
@@ -44,16 +62,26 @@ class MySQL:
         dataDirAbsolute = os.path.abspath(dataDir)
         fileLimit = self.__getFileLimit()
         with tempfile.TemporaryDirectory() as tempDirectory:
+            backupDirectory = tempDirectory+'/backup'
+            os.mkdir(backupDirectory)
             completedProcess = subprocess.run([
                 'mariabackup',
                 '--backup',
                 '--datadir='+dataDirAbsolute,
-                '--target-dir='+tempDirectory,
+                '--target-dir='+backupDirectory,
                 '--host='+self._mysqlHost,
                 '--user='+self._mysqlUsername,
                 '--password='+self._mysqlPassword,
                 '--port='+self._mysqlPort,
                 ])
+            shutil.copy(backupDirectory+'/xtrabackup_info', tempDirectory+'/xtrabackup_info')
+            tarFilePath = tempDirectory+'/backup.tar.bz2'
+            tar = tarfile.open(tarFilePath, 'w:bz2')
+            tar.add(backupDirectory, 'backup')
+            tar.close()
+            pyAesCrypt.encryptFile(tarFilePath, tarFilePath+'.enc', self._password, self._bufferSize)
+            shutil.rmtree(backupDirectory)
+            os.remove(tarFilePath)
             self._resort.adapter('mysql').upload(tempDirectory, name)
 
 
@@ -73,19 +101,10 @@ class MySQL:
     def __parseBackup(self, directory):
         backupName = os.path.basename(directory)
 
-        dummyHeader = '[main]\n'
         infoContent = self._resort.adapter('mysql').fileContent(directory+'/xtrabackup_info').decode('utf-8')
-        iniFile = dummyHeader+infoContent
-        xtrabackupInfoContent = configparser.ConfigParser()
-        xtrabackupInfoContent.read_string(iniFile)
-
-        isFullBackup = False
-        if int(xtrabackupInfoContent['main']['innodb_from_lsn']) == 0:
-            isFullBackup = True
-            
-
         parent = self.__parseBackupParent(directory)
-        return MySQLBackup().name(backupName).full(isFullBackup).parent(parent)
+
+        return MySQLBackup().name(backupName).parent(parent).parseInfo(infoContent)
 
     def __parseBackupParent(self, directory):
 
