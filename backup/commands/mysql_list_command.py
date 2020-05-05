@@ -2,13 +2,13 @@ from .command import Command
 from datetime import datetime
 import subprocess
 
-class FilesListCommand(Command):
+class MysqlListCommand(Command):
     def __init__(self):
-        self._name = "files:list"
-        self._description('List all availables file backups')
+        self._name = "mysql:list"
+        self._description('List all available mysql backups')
 
-    def setBorg(self, borg):
-        self._borg = borg
+    def setMySQL(self, mysql):
+        self._mysql = mysql
         return self
 
     def run(self, parameters):
@@ -19,12 +19,10 @@ class FilesListCommand(Command):
         resortName = parameters[0]
         resort = self._storage.findResort(resortName)
 
-        repositoryNumber = "1"
-        if len(parameters) >= 2:
-            repositoryNumber = parameters[1]
-
         resort.passAdapters(self)
-        print( self._borg.list(repositoryNumber) )
+        for backup in self._mysql.list():
+            backup.print()
+
 
     def printHelp(self):
         print("Usage:")

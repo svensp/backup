@@ -16,8 +16,8 @@ class Resort:
         self._storage = storage
         return self
 
-    def withMySQL(self):
-        self._mysql = True
+    def withMySQL(self, mysql):
+        self._mysql = mysql
         return self
 
     def withPostgres(self):
@@ -68,6 +68,9 @@ class Resort:
 
     def listFolders(self, path=None):
         return self._storage.resort(self._name).adapter(self._currentAdapter).listFolder(path)
+
+    def fileContent(self, path):
+        return self._storage.resort(self._name).adapter(self._currentAdapter).fileContent(path)
 
     def adapter(self, adapater):
         self._currentAdapter = adapater

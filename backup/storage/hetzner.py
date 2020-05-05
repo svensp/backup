@@ -8,6 +8,7 @@ from paramiko.hostkeys import HostKeyEntry
 from paramiko.agent import Agent
 from .common import Resort, NoSuchResortError
 from ..adapters.borg import Borg
+from ..adapters.mysql import MySQL
 
 class HetznerStorage:
     def __init__(self):
@@ -96,7 +97,10 @@ class HetznerStorage:
 
         resortDirectories = self.__sftp.listdir( resortPath )
         if 'mysql' in resortDirectories:
-            resort.withMySQL()
+            resort.withMySQL( 
+                    MySQL()
+                    .resort(resort)
+                    )
 
         if 'postgres' in resortDirectories:
             resort.withPostgres()
@@ -152,6 +156,17 @@ class HetznerStorage:
             pathParts.append(path)
         path = '/'.join(pathParts) 
         return self.__sftp.listdir( path )
+
+    def fileContent(self, path):
+        pathParts = [
+            self.__path,
+            self._currentResort,
+            self.currentAdapter,
+            path,
+            ]
+        path = '/'.join(pathParts) 
+        with self.__sftp.file( path ) as file:
+            return file.read()
 
     def copyId(self):
         if '.ssh' not in self.__sftp.listdir('/'):
