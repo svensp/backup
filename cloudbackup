@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
-import backup.program
+from backup.program import Program
 
-backup = backup.program.Program()
+backup = Program()
 ret = backup.run()
 sys.exit(ret)
