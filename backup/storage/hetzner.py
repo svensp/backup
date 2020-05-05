@@ -1,4 +1,5 @@
 import os
+import stat
 from paramiko.transport import Transport
 from paramiko.sftp_client import SFTPClient
 from paramiko.rsakey import RSAKey
@@ -48,7 +49,26 @@ class HetznerStorage:
         self.__sftp.mkdir( self.__path+'/'+resortName, 0o755)
 
     def removeResort(self, resortName):
-        self.__sftp.rmdir( self.__path+'/'+resortName)
+        self.__rmdir(self.__path+'/'+resortName, True)
+
+    def __rmdir(self, directory, verbose=False):
+        print(directory)
+        for entry in self.__sftp.listdir_attr( directory ):
+            if stat.S_ISDIR(entry.st_mode):
+                subdir = directory+'/'+entry.filename
+                if verbose:
+                    print("Recursing into "+subdir)
+                self.__rmdir(subdir)
+            else:
+                filePath = directory+'/'+entry.filename
+                if verbose:
+                    print("Removing into "+filePath)
+                self.__sftp.remove(filePath)
+                
+        if verbose:
+            print("Removing "+directory)
+            
+        self.__sftp.rmdir(directory)
 
     def findResort(self, resortName):
         directories = self.__sftp.listdir( self.__path )
