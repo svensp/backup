@@ -79,12 +79,10 @@ class MySQL:
             tar = tarfile.open(tarFilePath, 'w:bz2')
             tar.add(backupDirectory, 'backup')
             tar.close()
-            pyAesCrypt.encryptFile(tarFilePath, tarFilePath+'.enc', self._password, self._bufferSize)
+            pyAesCrypt.encryptFile(tarFilePath, tarFilePath+'.aes', self._password, self._bufferSize)
             shutil.rmtree(backupDirectory)
             os.remove(tarFilePath)
             self._resort.adapter('mysql').upload(tempDirectory, name)
-
-
         return self
 
     def __getFileLimit(self):
