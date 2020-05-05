@@ -65,5 +65,6 @@ class Program:
         CommandContainer.filesList().register(commands)
         CommandContainer.filesMount().register(commands)
         CommandContainer.filesUmount().register(commands)
+        CommandContainer.filesPrune().register(commands)
 
         return commands

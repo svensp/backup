@@ -138,6 +138,24 @@ class Borg:
             return self
         return completedProcess.stdout.decode('utf-8')
 
+    def prune(self, repositoryNumber):
+        repo = self.__makeRepo(repositoryNumber)
+        print("Pruning file backups in repository "+repositoryNumber)
+        completedProcess = self.command([
+            'prune',
+            '--keep-daily=14',
+            '--keep-weekly=6',
+            '--keep-monthly=6',
+            '::'
+            ], repositoryNumber)
+        if completedProcess.returncode != 0:
+            print("Process did not return success:")
+            print("Code: "+ str(completedProcess.returncode))
+            print( completedProcess.stdout.decode('utf-8') )
+            print( completedProcess.stderr.decode('utf-8') )
+            return self
+        return completedProcess.stdout.decode('utf-8')
+
     def command(self, args, repoNumber):
         return subprocess.run(
                 ['borgbackup'] + args,

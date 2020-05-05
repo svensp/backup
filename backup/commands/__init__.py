@@ -9,6 +9,7 @@ from .files_backup_command import FilesBackupCommand
 from .files_list_command import FilesListCommand
 from .files_mount_command import FilesMountCommand
 from .files_umount_command import FilesUmountCommand
+from .files_prune_command import FilesPruneCommand
 
 class CommandContainer(containers.DeclarativeContainer):
     storageAuth = providers.Factory(StorageAuthCommand)
@@ -22,3 +23,4 @@ class CommandContainer(containers.DeclarativeContainer):
     filesList = providers.Factory(FilesListCommand)
     filesMount = providers.Factory(FilesMountCommand)
     filesUmount = providers.Factory(FilesUmountCommand)
+    filesPrune = providers.Factory(FilesPruneCommand)
