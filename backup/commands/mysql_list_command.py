@@ -27,7 +27,6 @@ class MysqlListCommand(Command):
 
     def printHelp(self):
         print("Usage:")
-        print(self._name+" RESORTNAME TARGET\n")
-        print("Create a backup")
+        print(self._name+" RESORTNAME\n")
+        print("List available mysql backups")
         print("- RESORTNAME: The resort in which to make file backup available")
-        print("- The directory to backup")

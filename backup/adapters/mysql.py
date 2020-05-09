@@ -88,6 +88,8 @@ class MySQLBackup:
         print( (' ' * indent) + self._name)
 
         for child in self.getChildren():
+            if child is self:
+                continue
             child.print(indent + 2)
                 
 
@@ -119,13 +121,21 @@ class MySQL:
         self._resort = resort
         return self
 
+    def incrementalBackup(self, name, parentName, dataDir):
+        parent = self.find(parentName)
+
+        return self.__backup(name, dataDir, parent._endingPoint)
+
     def fullBackup(self, name, dataDir):
+        return self.__backup(name, dataDir)
+
+    def __backup(self, name, dataDir, baseLsn = None):
         dataDirAbsolute = os.path.abspath(dataDir)
         fileLimit = self.__getFileLimit()
         with tempfile.TemporaryDirectory() as tempDirectory:
             backupDirectory = tempDirectory+'/backup'
             os.mkdir(backupDirectory)
-            completedProcess = subprocess.run([
+            command = [
                 'mariabackup',
                 '--backup',
                 '--datadir='+dataDirAbsolute,
@@ -134,17 +144,34 @@ class MySQL:
                 '--user='+self._mysqlUsername,
                 '--password='+self._mysqlPassword,
                 '--port='+self._mysqlPort,
-                ])
-            shutil.copy(backupDirectory+'/xtrabackup_info', tempDirectory+'/xtrabackup_info')
-            tarFilePath = tempDirectory+'/backup.tar.bz2'
-            tar = tarfile.open(tarFilePath, 'w:bz2')
-            tar.add(backupDirectory, 'backup')
-            tar.close()
-            pyAesCrypt.encryptFile(tarFilePath, tarFilePath+'.aes', self._password, self._bufferSize)
-            shutil.rmtree(backupDirectory)
-            os.remove(tarFilePath)
-            self._resort.adapter('mysql').upload(tempDirectory, name)
+                ]
+            if baseLsn:
+                command.append('--incremental-lsn='+str(baseLsn))
+                
+            completedProcess = subprocess.run(command, check=True)
+            self.__extractBackupInfo(backupDirectory, tempDirectory)
+            tarFile = self.__compressBackup(backupDirectory, tempDirectory)
+            self.__encryptBackup(tarFile)
+            self.__uploadBackup(tempDirectory, name)
         return self
+
+    def __extractBackupInfo(self, backupDirectory, tempDirectory):
+            shutil.copy(backupDirectory+'/xtrabackup_info', tempDirectory+'/xtrabackup_info')
+
+    def __compressBackup(self, backupDirectory, tempDirectory):
+        tarFilePath = tempDirectory+'/backup.tar.bz2'
+        tar = tarfile.open(tarFilePath, 'w:bz2')
+        tar.add(backupDirectory, 'backup')
+        tar.close()
+        shutil.rmtree(backupDirectory)
+        return tarFilePath
+
+    def __encryptBackup(self, tarFilePath):
+        pyAesCrypt.encryptFile(tarFilePath, tarFilePath+'.aes', self._password, self._bufferSize)
+        os.remove(tarFilePath)
+
+    def __uploadBackup(self, backupDirectory, name):
+        self._resort.adapter('mysql').upload(backupDirectory, name)
 
     def find(self, name):
         availableBackups = self.list()

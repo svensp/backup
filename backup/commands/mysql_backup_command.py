@@ -1,3 +1,5 @@
+import argparse
+import sys
 from .command import Command
 from datetime import datetime
 
@@ -11,25 +13,27 @@ class MysqlBackupCommand(Command):
         return self
 
     def run(self, parameters):
-        if len(parameters) < 2:
-            self.printHelp()
-            return 1
+        parser = argparse.ArgumentParser()
+        parser.add_argument('resortName', help='The resort in which to create the backup')
+        parser.add_argument('dataDir', help='The data directory of the mariadb server')
+        parser.add_argument('--parent', nargs=1, help='Create an incremental backup based on the given parent')
+        args = parser.parse_args(parameters)
 
-
-        resortName = parameters[0]
+        resortName = args.resortName
         resort = self._storage.findResort(resortName)
         resort.passAdapters(self)
 
         name = datetime.now().strftime('%Y-%m-%d_%H-%M')
-        dataDir = parameters[1]
+        dataDir = args.dataDir
 
-        print("Creating Backup "+name)
+        if args.parent:
+            parentName = args.parent[0]
+            print("Creating incremental Backup "+name+" based on "+parentName)
+            self._mysql.incrementalBackup(name, parentName, dataDir)
+            print("Created incremental Backup "+name+" based on "+parentName)
+            return 0
+
+        print("Creating complete Backup "+name)
         self._mysql.fullBackup(name, dataDir)
-        print("Created Backup "+name)
-
-    def printHelp(self):
-        print("Usage:")
-        print(self._name+" RESORTNAME DATADIR\n")
-        print("Make sure file backup is available in a resort")
-        print("- RESORTNAME: The resort in which to create the backup")
-        print("- DATADIR: The data directory of the mariadb server")
+        print("Created complete Backup "+name)
+        return 0
