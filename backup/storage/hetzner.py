@@ -23,6 +23,7 @@ class HetznerStorage:
         self.__transport = Transport( (self.__host, self.__port) )
         self._usePassword = False
         self.uploadChunkSize = int(os.environ.get('UPLOAD_CHUNK_SIZE', '2097152'))
+        self.downloadChunkSize = int(os.environ.get('DOWLOAD_CHUNK_SIZE', '2097152'))
 
     def load(self):
         self.__connect()
@@ -215,6 +216,55 @@ class HetznerStorage:
                     if not data:
                         break
                     remoteFile.write(data)
+
+    def download(self, remotePath, localPath, verbose=False):
+        fullRemotePath = '/'.join([
+            self.__path,
+            self._currentResort,
+            self.currentAdapter,
+            remotePath,
+            ])
+        pathStat = self.__sftp.stat(fullRemotePath)
+        if stat.S_ISDIR(pathStat.st_mode):
+            self.__downloadDirectory(fullRemotePath, localPath,  verbose)
+        else:
+            self.__downloadFile(fullRemotePath, localPath, verbose)
+
+    def __downloadDirectory(self, remotePath, localPath, verbose=False):
+        mustMake = True
+        try:
+            if os.path.isdir(localPath):
+                mustMake = False
+        except FileNotFoundError:
+            pass
+                
+        if mustMake:
+            os.mkdir(localPath)
+
+        for remoteFileAttribute in self.__sftp.listdir_attr( remotePath ):
+            fileName = remoteFileAttribute.filename
+            localFilePath = localPath + '/' + fileName
+            remoteFilePath = remotePath + '/' + fileName
+
+            if stat.S_ISDIR(remoteFileAttribute.st_mode):
+                if verbose:
+                    print("Recursing into "+localFilePath+" as "+remoteFilePath)
+                self.__downloadDirectory(remoteFilePath, localFilePath, verbose)
+            else:
+                self.__downloadFile(remoteFilePath, localFilePath, verbose)
+        pass
+
+    def __downloadFile(self, remotePath, localPath, verbose=False):
+        if verbose:
+            print("Downloading "+remotePath+" as "+localPath)
+        with self.__sftp.file(remotePath, 'rb') as remoteFile:
+            with open(localPath, 'wb') as localFile:
+                while True:
+                    data = remoteFile.read(self.downloadChunkSize)
+                    if not data:
+                        break
+                    localFile.write(data)
+
 
     def copyId(self):
         if '.ssh' not in self.__sftp.listdir('/'):

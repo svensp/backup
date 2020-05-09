@@ -69,5 +69,6 @@ class Program:
         CommandContainer.mysqlCreate().register(commands)
         CommandContainer.mysqlList().register(commands)
         CommandContainer.mysqlBackup().register(commands)
+        CommandContainer.mysqlRestore().register(commands)
 
         return commands

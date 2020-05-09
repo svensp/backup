@@ -1,0 +1,20 @@
+version: '2.1'
+services:
+  db:
+    image: mariadb:10.3
+    volumes:
+      - .:/var/lib/mysql
+  chown-data:
+    image: bash
+    command: bash -c 'chown -R 999:999 /var/lib/mysql'
+    volumes:
+      - .:/var/lib/mysql
+  pma:
+    image: nazarpc/phpmyadmin:4.9.2_build-1
+    ports:
+      - 8081:80
+    environment:
+      - MYSQL_HOST=db
+      - SESSION_TIMEOUT=86400
+      - UPLOAD_SIZE=10G
+      - 'JSON_CONFIG={"ExecTimeLimit":1800}'
