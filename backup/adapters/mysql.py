@@ -17,16 +17,16 @@ class MySQLBackupMeta:
 
     def addByEndingPoint(self, endingPoint,backup):
         try:
-            self.byEndingPoint[endingPoint].append(self)
+            self.byEndingPoint[endingPoint].append(backup)
         except KeyError:
-            self.byEndingPoint[endingPoint] = [ self ]
+            self.byEndingPoint[endingPoint] = [ backup ]
         return self
 
     def addByStartingPoint(self, startingPoint,backup):
         try:
-            self.byStartingPoint[startingPoint].append(self)
+            self.byStartingPoint[startingPoint].append(backup)
         except KeyError:
-            self.byStartingPoint[startingPoint] = [ self ]
+            self.byStartingPoint[startingPoint] = [ backup ]
         return self
 
     def parent(self, childStartingPoint):
@@ -80,6 +80,9 @@ class MySQLBackup:
 
     def isNamed(self, name):
         return self._name == name
+
+    def isFull(self):
+        return self._full
 
     def print(self, indent = 0):
         print( (' ' * indent) + self._name)

@@ -21,7 +21,8 @@ class MysqlListCommand(Command):
 
         resort.passAdapters(self)
         for backup in self._mysql.list():
-            backup.print()
+            if backup.isFull():
+                backup.print()
 
 
     def printHelp(self):
