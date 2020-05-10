@@ -40,6 +40,7 @@ class MySQLBackupMeta:
             return self.byStartingPoint[parentEndingPoint]
         except KeyError:
             return []
+            
 
 class MySQLBackup:
     def __init__(self):
@@ -92,6 +93,18 @@ class MySQLBackup:
                 continue
             child.print(indent + 2)
                 
+
+    def history(self):
+        reverseHistory = [self]
+
+        parent = self.getParent()
+        while parent:
+            reverseHistory.append(parent)
+            parent = parent.getParent()
+
+        history = reverseHistory.reverse()
+        return history
+            
 
     def getParent(self):
         if self._full:
@@ -180,21 +193,36 @@ class MySQL:
                 return backup
         raise BackupNotFoundException()
 
-    def restore(self, name, dataDir):
+    def restore(self, name, dataDir, port=8080):
         dataDirAbsolute = os.path.abspath(dataDir)
-        backup = self.__parseBackup(name)
+        backup = self.find(name)
         self._resort.adapter('mysql').download(name, dataDirAbsolute)
         tarFilePath = dataDirAbsolute+'/backup.tar.bz2'
-        pyAesCrypt.decryptFile(tarFilePath+'.aes', tarFilePath, self._password, self._bufferSize)
-        tar = tarfile.open(tarFilePath, 'r:bz2')
-        tar.extractall(dataDir)
+        self.__decryptBackup(tarFilePath)
+        self.__unpackBackup(tarFilePath, dataDir)
         completedProcess = subprocess.run([
             'mariabackup',
             '--prepare',
             '--target-dir='+dataDirAbsolute+'/backup',
             ])
-        shutil.copy(self._assetBase+'/docker-compose.yml',
-                dataDirAbsolute+'/backup/docker-compose.yml')
+        self.__copyDockerCompose(dataDirAbsolute+'/backup/docker-compose.yml', port)
+
+    def __decryptBackup(self, tarFilePath):
+        encryptedPath = tarFilePath+'.aes'
+        pyAesCrypt.decryptFile(encryptedPath, tarFilePath, self._password, self._bufferSize)
+        os.remove(encryptedPath)
+
+    def __unpackBackup(self, tarFilePath, dataDir):
+        tar = tarfile.open(tarFilePath, 'r:bz2')
+        tar.extractall(dataDir)
+        os.remove(tarFilePath)
+
+    def __copyDockerCompose(self, target, port):
+        with open(self._assetBase+'/docker-compose.yml', 'r') as file:
+            dockerCompose = file.read()
+        dockerCompose = dockerCompose.replace('%%PORT%%', str(port))
+        with open(target, 'w') as file:
+            file.write(dockerCompose)
 
     def __getFileLimit(self):
         limits = resource.getrlimit(resource.RLIMIT_NOFILE)

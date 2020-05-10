@@ -12,7 +12,7 @@ services:
   pma:
     image: nazarpc/phpmyadmin:4.9.2_build-1
     ports:
-      - 8081:80
+      - %%PORT%%:80
     environment:
       - MYSQL_HOST=db
       - SESSION_TIMEOUT=86400

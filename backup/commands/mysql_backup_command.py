@@ -13,11 +13,7 @@ class MysqlBackupCommand(Command):
         return self
 
     def run(self, parameters):
-        parser = argparse.ArgumentParser()
-        parser.add_argument('resortName', help='The resort in which to create the backup')
-        parser.add_argument('dataDir', help='The data directory of the mariadb server')
-        parser.add_argument('--parent', nargs=1, help='Create an incremental backup based on the given parent')
-        args = parser.parse_args(parameters)
+        args = self.__parseArgs(parameters)
 
         resortName = args.resortName
         resort = self._storage.findResort(resortName)
@@ -37,3 +33,10 @@ class MysqlBackupCommand(Command):
         self._mysql.fullBackup(name, dataDir)
         print("Created complete Backup "+name)
         return 0
+
+    def __parseArgs(self, parameters):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('resortName', help='The resort in which to create the backup')
+        parser.add_argument('dataDir', help='The data directory of the mariadb server')
+        parser.add_argument('--parent', nargs=1, help='Create an incremental backup based on the given parent')
+        return parser.parse_args(parameters)
