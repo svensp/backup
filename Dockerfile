@@ -7,9 +7,11 @@ RUN apt-get update \
       borgbackup \
       mariadb-backup \
    && pip3 install paramiko-ng pyAesCrypt \
-   && rm -Rf /var/lib/apt/lists/*
+   && rm -Rf /var/lib/apt/lists/* \
+   && mkdir -p /home/user
 
 ENV PATH /opt/cloudbackup:$PATH
+ENV HOME /home/user
 
 COPY . /opt/cloudbackup
 
