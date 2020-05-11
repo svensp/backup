@@ -6,7 +6,10 @@ RUN apt-get update \
       python3-pip \
       borgbackup \
       mariadb-backup \
-   && pip3 install paramiko-ng pyAesCrypt \
+   && pip3 install \
+      paramiko-ng \
+      pyAesCrypt \
+      dependency-injector \
    && rm -Rf /var/lib/apt/lists/* \
    && mkdir -p /home/user
 
