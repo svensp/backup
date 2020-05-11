@@ -35,7 +35,7 @@ class LatestFullFinder(Finder):
                 continue
             fullBackups.append(backup)
 
-        sortedFullBackups = self._sorter(fullBackups)
+        sortedFullBackups = self._sorter.sort(fullBackups)
         return sortedFullBackups[-1]
                 
 
@@ -117,8 +117,8 @@ class MySQLBackup:
     def isFull(self):
         return self._full
 
-    def print(self, indent = 0):
-        print( (' ' * indent) + self._name)
+    def print(self, indent = 0, prefix=''):
+        print( (' ' * indent) + prefix + self._name)
 
     def printRecursive(self, indent = 0):
         self.print()
@@ -226,8 +226,23 @@ class MySQL:
     def __uploadBackup(self, backupDirectory, name):
         self._resort.adapter('mysql').upload(backupDirectory, name)
 
+    def getSpeciaBackups(self):
+        availableBackups = self.list()
+
+        specialBackups = {}
+        for specialName in self._specialNames:
+            specialNameFinder = self._specialNames[specialName]
+            specialBackups[specialName] = specialNameFinder.find(availableBackups)
+
+        return specialBackups
+
     def find(self, name):
         availableBackups = self.list()
+
+        if name in self._specialNames.keys():
+            specialNameFinder = self._specialNames[name]
+            return specialNameFinder.find(availableBackups)
+
         for backup in availableBackups:
             if backup.isNamed(name):
                 return backup

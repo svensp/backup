@@ -24,6 +24,13 @@ class MysqlListCommand(Command):
             if backup.isFull():
                 backup.printRecursive()
 
+        print('Special names:')
+        specialNameBackups = self._mysql.getSpeciaBackups()
+        for specialName in specialNameBackups:
+            specialNameBackups[specialName].print(prefix=specialName+' ')
+            
+            
+
 
     def printHelp(self):
         print("Usage:")
