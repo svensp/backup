@@ -108,6 +108,8 @@ class Borg:
     def mount(self, name, target, repositoryNumber):
         repo = self.__makeRepo(repositoryNumber)
         print("Mounting backup "+name+" from Repository "+str(repositoryNumber)+' to '+target)
+        print("The borg mount is run in foreground to facilitate usage inside Docker")
+        print("Please cancel the program with an interrupt (control+c) after you are done.")
         completedProcess = self.command([
             'mount',
             '-f',
