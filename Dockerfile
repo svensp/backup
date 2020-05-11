@@ -6,6 +6,7 @@ RUN apt-get update \
       python3-pip \
       borgbackup \
       mariadb-backup \
+      openssh-client \
    && pip3 install \
       paramiko-ng \
       pyAesCrypt \

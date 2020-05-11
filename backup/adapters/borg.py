@@ -110,6 +110,7 @@ class Borg:
         print("Mounting backup "+name+" from Repository "+str(repositoryNumber)+' to '+target)
         completedProcess = self.command([
             'mount',
+            '-f',
             '::'+name,
             target
             ], repositoryNumber)
@@ -164,6 +165,7 @@ class Borg:
                 'BORG_NEW_PASSPHRASE': self._borgPassword,
                 'BORG_PASSPHRASE': self._borgPassword,
                 'BORG_REPO': self.__makeRepo(repoNumber),
+                'SSH_AUTH_SOCK': os.environ.get('SSH_AUTH_SOCK'),
                 'BORG_RSH': "ssh -o StrictHostKeyChecking=accept-new -i "+self._keyFilePath
                 })
 
