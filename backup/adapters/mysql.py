@@ -94,16 +94,17 @@ class MySQLBackup:
             child.print(indent + 2)
                 
 
-    def history(self):
-        reverseHistory = [self]
+    def getHistory(self):
+        history = [self]
 
         parent = self.getParent()
         while parent:
-            reverseHistory.append(parent)
+            history.append(parent)
             parent = parent.getParent()
 
-        history = reverseHistory.reverse()
-        return history
+        history.reverse()
+        fullBackup = history.pop(0)
+        return [ fullBackup, history ]
             
 
     def getParent(self):
@@ -196,16 +197,39 @@ class MySQL:
     def restore(self, name, dataDir, port=8080):
         dataDirAbsolute = os.path.abspath(dataDir)
         backup = self.find(name)
-        self._resort.adapter('mysql').download(name, dataDirAbsolute)
-        tarFilePath = dataDirAbsolute+'/backup.tar.bz2'
-        self.__decryptBackup(tarFilePath)
-        self.__unpackBackup(tarFilePath, dataDir)
+        fullBackup, history = backup.getHistory()
+        self.__restoreFullBackup(fullBackup, dataDirAbsolute)
+        self.__restoreIncrementalBackups(history, dataDirAbsolute)
+
+        self.__copyDockerCompose(dataDirAbsolute+'/backup/docker-compose.yml', port)
+
+    def __restoreFullBackup(self, backup, dataDir):
+        self.__downloadAndExtract(backup, dataDir)
         completedProcess = subprocess.run([
             'mariabackup',
             '--prepare',
-            '--target-dir='+dataDirAbsolute+'/backup',
-            ])
-        self.__copyDockerCompose(dataDirAbsolute+'/backup/docker-compose.yml', port)
+            '--target-dir='+dataDir+'/backup',
+            ], check=True)
+
+    def __restoreIncrementalBackups(self, backups, dataDir):
+        for backup in backups:
+            self.__restoreIncrementalBackup(backup, dataDir)
+
+    def __restoreIncrementalBackup(self, backup, dataDir):
+        with tempfile.TemporaryDirectory(dir=dataDir) as tempDir:
+            self.__downloadAndExtract(backup, tempDir)
+            completedProcess = subprocess.run([
+                'mariabackup',
+                '--prepare',
+                '--target-dir='+dataDir+'/backup',
+                '--incremental-dir='+tempDir+'/backup'
+                ], check=True)
+
+    def __downloadAndExtract(self, backup, targetDirectory):
+        self._resort.adapter('mysql').download(backup._name, targetDirectory)
+        tarFilePath = targetDirectory+'/backup.tar.bz2'
+        self.__decryptBackup(tarFilePath)
+        self.__unpackBackup(tarFilePath, targetDirectory)
 
     def __decryptBackup(self, tarFilePath):
         encryptedPath = tarFilePath+'.aes'

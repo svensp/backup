@@ -14,6 +14,7 @@ from .mysql_create_command import MysqlCreateCommand
 from .mysql_list_command import MysqlListCommand
 from .mysql_backup_command import MysqlBackupCommand
 from .mysql_restore_command import MysqlRestoreCommand
+from .mysql_history_command import MysqlHistoryCommand
 
 class CommandContainer(containers.DeclarativeContainer):
     storageAuth = providers.Factory(StorageAuthCommand)
@@ -33,3 +34,4 @@ class CommandContainer(containers.DeclarativeContainer):
     mysqlList = providers.Factory(MysqlListCommand)
     mysqlBackup = providers.Factory(MysqlBackupCommand)
     mysqlRestore = providers.Factory(MysqlRestoreCommand)
+    mysqlHistory = providers.Factory(MysqlHistoryCommand)
