@@ -12,13 +12,32 @@ class Finder():
         self.backups = backups
         return self
 
+class Sorter():
+    def sort(self, backups):
+        return sorted(backups, key=lambda backup: backup._name)
+
 class LatestFinder(Finder):
-    def find():
-        pass
+    def __init__(self, sorter=Sorter()):
+        self._sorter = sorter
+
+    def find(self, backups):
+        sortedBackups = self._sorter.sort(backups)
+        return sortedBackups[-1]
 
 class LatestFullFinder(Finder):
-    def find():
-        pass
+    def __init__(self, sorter=Sorter()):
+        self._sorter = sorter
+
+    def find(self, backups):
+        fullBackups = []
+        for backup in backups:
+            if not backup.isFull():
+                continue
+            fullBackups.append(backup)
+
+        sortedFullBackups = self._sorter(fullBackups)
+        return sortedFullBackups[-1]
+                
 
 class BackupNotFoundException(Exception):
     pass
@@ -101,10 +120,13 @@ class MySQLBackup:
     def print(self, indent = 0):
         print( (' ' * indent) + self._name)
 
+    def printRecursive(self, indent = 0):
+        self.print()
+
         for child in self.getChildren():
             if child is self:
                 continue
-            child.print(indent + 2)
+            child.printRecursive(indent + 2)
                 
 
     def getHistory(self):
@@ -143,8 +165,8 @@ class MySQL:
         self._password = os.environ.get('MYSQL_ENC_PASSWORD')
         self._assetBase = os.path.dirname(os.path.realpath(__file__))+'/assets'
         self._specialNames = {
-                'latest-full-backup': LastFullFinder()
-                'latest-backup': LastFinder()
+                'latest-full-backup': LatestFullFinder(),
+                'latest-backup': LatestFinder(),
                 }
 
 

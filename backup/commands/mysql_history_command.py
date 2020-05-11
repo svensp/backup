@@ -23,7 +23,7 @@ class MysqlHistoryCommand(Command):
         fullBackup, history = backup.getHistory()
         print('Full Backup: '+fullBackup._name)
         for backup in history:
-            print(backup._name)
+            backup.print()
 
     def __parseArgs(self, parameters):
         parser = argparse.ArgumentParser()
