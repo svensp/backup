@@ -7,6 +7,19 @@ import tarfile
 import tempfile
 import pyAesCrypt
 
+class Finder():
+    def backups(self, backups):
+        self.backups = backups
+        return self
+
+class LatestFinder(Finder):
+    def find():
+        pass
+
+class LatestFullFinder(Finder):
+    def find():
+        pass
+
 class BackupNotFoundException(Exception):
     pass
 
@@ -129,6 +142,10 @@ class MySQL:
         self._bufferSize = int(os.environ.get('MYSQL_ENC_BUFSIZE', 64 * 1024))
         self._password = os.environ.get('MYSQL_ENC_PASSWORD')
         self._assetBase = os.path.dirname(os.path.realpath(__file__))+'/assets'
+        self._specialNames = {
+                'latest-full-backup': LastFullFinder()
+                'latest-backup': LastFinder()
+                }
 
 
     def resort(self, resort):
