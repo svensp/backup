@@ -18,4 +18,4 @@ ENV HOME /home/user
 
 COPY . /opt/cloudbackup
 
-ENTRYPOINT /opt/cloudbackup/cloudbackup
+ENTRYPOINT [ "cloudbackup" ]
