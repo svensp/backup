@@ -28,9 +28,6 @@ class MysqlListCommand(Command):
         specialNameBackups = self._mysql.getSpeciaBackups()
         for specialName in specialNameBackups:
             specialNameBackups[specialName].print(prefix=specialName+' ')
-            
-            
-
 
     def printHelp(self):
         print("Usage:")

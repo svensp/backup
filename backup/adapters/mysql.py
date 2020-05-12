@@ -22,6 +22,7 @@ class LatestFinder(Finder):
 
     def find(self, backups):
         sortedBackups = self._sorter.sort(backups)
+
         return sortedBackups[-1]
 
 class LatestFullFinder(Finder):
@@ -75,8 +76,9 @@ class MySQLBackupMeta:
             
 
 class MySQLBackup:
-    def __init__(self):
+    def __init__(self, sorter=Sorter()):
         self._name = ''
+        self._sorter = sorter
 
     def mysql(self, mysql):
         self._mysql = mysql
@@ -121,9 +123,10 @@ class MySQLBackup:
         print( (' ' * indent) + prefix + self._name)
 
     def printRecursive(self, indent = 0):
-        self.print()
+        self.print(indent)
 
-        for child in self.getChildren():
+        sortedChildren = self._sorter.sort( self.getChildren() )
+        for child in sortedChildren:
             if child is self:
                 continue
             child.printRecursive(indent + 2)
