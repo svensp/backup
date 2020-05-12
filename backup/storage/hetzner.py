@@ -306,6 +306,10 @@ class HetznerStorage:
             print("Failed to load ssh key - trying to connect to ssh agent")
             agent = Agent()
             keys = agent.get_keys()
+            if not keys:
+                print("No keys found in the ssh agent. Did you add them with ssh-add?")
+                raise KeyError()
+                
             return keys[0]
     
     def __publicRFC4716(self, privateKey):
