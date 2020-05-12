@@ -300,13 +300,23 @@ class HetznerStorage:
             
 
     def __loadKey(self):
+        if self.__keyFilePath == 'agent':
+            return self.__loadFromAgent()
+
         try:
             return RSAKey.from_private_key_file(self.__keyFilePath)
-        except Exception:
-            print("Failed to load ssh key - trying to connect to ssh agent")
-            agent = Agent()
-            keys = agent.get_keys()
-            return keys[0]
+        except FileNotFoundError:
+            print("Failed to load "+self.__keyFilePath+" trying the ssh-agent.")
+            return self.__loadFromAgent()
+
+    def __loadFromAgent(self):
+        print("Failed to load ssh key - trying to connect to ssh agent")
+        agent = Agent()
+        keys = agent.get_keys()
+        if len(keys) == 0:
+            raise KeyError("No keys found in the ssh agent. Did you add them with ssh-add?")
+            
+        return keys[0]
     
     def __publicRFC4716(self, privateKey):
         # NOte: rfc4716 says 72 bytes at most but ssh-keygen into rfc4716

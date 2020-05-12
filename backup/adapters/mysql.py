@@ -79,6 +79,14 @@ class MySQLBackup:
     def __init__(self, sorter=Sorter()):
         self._name = ''
         self._sorter = sorter
+        self._tags = []
+
+    def addTag(self, tag):
+        if tag in self._tags:
+            return self
+
+        self._tags.append(tag)
+        return self
 
     def mysql(self, mysql):
         self._mysql = mysql
@@ -90,6 +98,19 @@ class MySQLBackup:
 
     def meta(self, meta):
         self._meta = meta
+        return self
+
+    def writeIni(self, filePath):
+        config = configparser.ConfigParser()
+        with open(filePath, 'w') as file:
+            config.write(file)
+
+    def parseIni(self, extraIni):
+        config = configparser.ConfigParser()
+        config.read_string(extraIni)
+
+        self.tags = config['main']['tags'].split(',')
+
         return self
 
     def parseInfo(self, infoContent):
@@ -167,6 +188,7 @@ class MySQL:
         self._bufferSize = int(os.environ.get('MYSQL_ENC_BUFSIZE', 64 * 1024))
         self._password = os.environ.get('MYSQL_ENC_PASSWORD')
         self._assetBase = os.path.dirname(os.path.realpath(__file__))+'/assets'
+        self._tags = []
         self._specialNames = {
                 'latest-full-backup': LatestFullFinder(),
                 'latest-backup': LatestFinder(),
@@ -184,6 +206,10 @@ class MySQL:
 
     def fullBackup(self, name, dataDir):
         return self.__backup(name, dataDir)
+
+    def tags(self, tags):
+        self._tags = tags
+        return self
 
     def __backup(self, name, dataDir, baseLsn = None):
         dataDirAbsolute = os.path.abspath(dataDir)
@@ -208,6 +234,13 @@ class MySQL:
             self.__extractBackupInfo(backupDirectory, tempDirectory)
             tarFile = self.__compressBackup(backupDirectory, tempDirectory)
             self.__encryptBackup(tarFile)
+
+            newBackup = MySQLBackup()
+            for tag in self._tags:
+                newBackup.addTag(tag)
+
+            newBackup.writeIni(tempDirectory)
+                
             self.__uploadBackup(tempDirectory, name)
         return self
 
@@ -322,5 +355,9 @@ class MySQL:
         backupName = os.path.basename(directory)
 
         infoContent = self._resort.adapter('mysql').fileContent(directory+'/xtrabackup_info').decode('utf-8')
+        cloudbackupIni = self._resort.adapter('mysql').fileContent(directory+'/cloudbackup.ini').decode('utf-8')
 
-        return MySQLBackup().name(backupName).meta(meta).parseInfo(infoContent)
+        return MySQLBackup() \
+                .name(backupName).meta(meta) \
+                .parseInfo(infoContent) \
+                .parseIni(cloudbackupIni)
