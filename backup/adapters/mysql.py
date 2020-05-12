@@ -1,5 +1,6 @@
 import configparser
 import os
+import sys
 import resource
 import shutil
 import subprocess
@@ -12,9 +13,32 @@ class Finder():
         self.backups = backups
         return self
 
+    def parameters(self, parameters):
+        self._parameters = parameters
+        return self
+
 class Sorter():
     def sort(self, backups):
         return sorted(backups, key=lambda backup: backup._name)
+
+class LatestTagFinder(Finder):
+    def __init__(self, sorter=Sorter()):
+        self._sorter = sorter
+        self._parameters = []
+
+    def find(self, backups):
+        if len(self._parameters) == 0:
+            raise KeyError("Missing tag to search")
+
+        requiredTag = self._parameters[0]
+        backupsWithTags = []
+        for backup in backups:
+            if backup.hasTag(requiredTag):
+                backupsWithTags.append(backup)
+
+        sortedBackups = self._sorter.sort(backupsWithTags)
+
+        return sortedBackups[-1]
 
 class LatestFinder(Finder):
     def __init__(self, sorter=Sorter()):
@@ -100,8 +124,13 @@ class MySQLBackup:
         self._meta = meta
         return self
 
+    def hasTag(self, tag):
+        return tag in self._tags
+
     def writeIni(self, filePath):
         config = configparser.ConfigParser()
+        config['main'] = {}
+        config['main']['tags'] = ','.join(self._tags)
         with open(filePath, 'w') as file:
             config.write(file)
 
@@ -109,7 +138,7 @@ class MySQLBackup:
         config = configparser.ConfigParser()
         config.read_string(extraIni)
 
-        self.tags = config['main']['tags'].split(',')
+        self._tags = config['main']['tags'].split(',')
 
         return self
 
@@ -141,7 +170,10 @@ class MySQLBackup:
         return self._full
 
     def print(self, indent = 0, prefix=''):
-        print( (' ' * indent) + prefix + self._name)
+        tags = self._tags
+        tagList = ','.join(self._tags)
+        tagInfo = ' tags:'+tagList
+        print( (' ' * indent) + prefix + self._name + tagInfo)
 
     def printRecursive(self, indent = 0):
         self.print(indent)
@@ -192,6 +224,7 @@ class MySQL:
         self._specialNames = {
                 'latest-full-backup': LatestFullFinder(),
                 'latest-backup': LatestFinder(),
+                'latest-tag': LatestTagFinder(),
                 }
 
 
@@ -239,7 +272,7 @@ class MySQL:
             for tag in self._tags:
                 newBackup.addTag(tag)
 
-            newBackup.writeIni(tempDirectory)
+            newBackup.writeIni(tempDirectory+'/cloudbackup.ini')
                 
             self.__uploadBackup(tempDirectory, name)
         return self
@@ -268,16 +301,23 @@ class MySQL:
         specialBackups = {}
         for specialName in self._specialNames:
             specialNameFinder = self._specialNames[specialName]
-            specialBackups[specialName] = specialNameFinder.find(availableBackups)
+            try:
+                specialBackups[specialName] = specialNameFinder.find(availableBackups)
+            except KeyError:
+                pass
 
         return specialBackups
 
     def find(self, name):
         availableBackups = self.list()
 
-        if name in self._specialNames.keys():
-            specialNameFinder = self._specialNames[name]
-            return specialNameFinder.find(availableBackups)
+        specialParameters = name.split(':')
+        specialName = specialParameters.pop(0)
+        if specialName in self._specialNames.keys():
+            specialNameFinder = self._specialNames[specialName]
+            #return specialNameFinder.parameters(specialParameters).find(availableBackups)
+            specialNameFinder.parameters(specialParameters).find(availableBackups).print()
+            sys.exit(0)
 
         for backup in availableBackups:
             if backup.isNamed(name):

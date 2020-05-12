@@ -22,15 +22,22 @@ class MysqlBackupCommand(Command):
         name = datetime.now().strftime('%Y-%m-%d_%H-%M')
         dataDir = args.dataDir
 
+        tags = args.tags
+        if not tags:
+            tags = []
+            
+
         if args.parent:
+            tags.append('incremental')
             parentName = args.parent[0]
             print("Creating incremental Backup "+name+" based on "+parentName)
-            self._mysql.incrementalBackup(name, parentName, dataDir)
+            self._mysql.tags(tags).incrementalBackup(name, parentName, dataDir)
             print("Created incremental Backup "+name+" based on "+parentName)
             return 0
 
+        tags.append('full')
         print("Creating complete Backup "+name)
-        self._mysql.fullBackup(name, dataDir)
+        self._mysql.tags(tags).fullBackup(name, dataDir)
         print("Created complete Backup "+name)
         return 0
 
@@ -39,4 +46,5 @@ class MysqlBackupCommand(Command):
         parser.add_argument('resortName', help='The resort in which to create the backup')
         parser.add_argument('dataDir', help='The data directory of the mariadb server')
         parser.add_argument('--parent', nargs=1, help='Create an incremental backup based on the given parent')
+        parser.add_argument('--tags', nargs='*', help='Tags')
         return parser.parse_args(parameters)
