@@ -11,15 +11,36 @@ import tarfile
 import tempfile
 import time
 
-class DeletionCandidate():
+class DeletionMeta():
     def __init__(self):
+        self._candidates = {}
+
+    def insert(self, candidate):
+        candidate.inject(self._candidates)
+        return self
+
+    def candidateForBackup(self, backup):
+        return DeletionCandidate.byBackup(self._candidates, backup)
+
+class DeletionCandidate():
+    def __init__(self, meta):
         self._expirationTime = None
+        self._meta = meta
+
+    @classmethod
+    def byBackup(cls, dict, backup):
+        return dict[backup.getName()]
+
+    def inject(self, dict):
+        dict[self._backup.getName()] = self
+        return self
 
     def getName(self):
         return self._backup.getName()
 
     def parse(self, backup):
         self._backup = backup
+        self._meta.insert(self)
         return self
 
     def rule(self, rule):
@@ -76,19 +97,45 @@ class DeletionCandidate():
     def weeksDelta(self, amount):
         return datetime.timedelta(weeks=amount)
 
+    def orphaned(self):
+        if self._backup.isFull():
+            return False
+            
+        parents = self._backup.getParents()
+        for parent in parents:
+            parentCandidate = self._meta.candidateForBackup(parent)
+            if not parentCandidate.shouldDelete():
+                return False
+
+        return True
+
     def expired(self):
         if not self._expirationTime:
             return False
 
         return self._expirationTime < datetime.datetime.now()
 
+    def shouldDelete(self):
+        if self.expired():
+            return True
+
+        if self.orphaned():
+            return True
+
+        return False
+
     def printExpiration(self):
         self._backup.print(suffix=' expires at '+str(self._expirationTime) )
 
-    def printExpired(self):
-        if not self.expired():
+    def print(self):
+        if not self.shouldDelete():
             return
-        self._backup.print(suffix=' has expired at '+str(self._expirationTime))
+
+        if self.expired():
+            self._backup.print(suffix=' has expired at '+str(self._expirationTime))
+
+        if self.orphaned():
+            self._backup.print(suffix=' will be orphaned after the pruning')
 
 class Finder():
     def backups(self, backups):
@@ -171,6 +218,12 @@ class MySQLBackupMeta:
     def parent(self, childStartingPoint):
         try:
             return self.byEndingPoint[childStartingPoint][0]
+        except KeyError:
+            return None
+
+    def parents(self, childStartingPoint):
+        try:
+            return self.byEndingPoint[childStartingPoint]
         except KeyError:
             return None
 
@@ -284,11 +337,15 @@ class MySQLBackup:
         fullBackup = history.pop(0)
         return [ fullBackup, history ]
             
-
     def getParent(self):
         if self._full:
             return None
         return self._meta.parent(self._startingPoint)
+
+    def getParents(self):
+        if self._full:
+            return None
+        return self._meta.parents(self._startingPoint)
 
     def getChildren(self):
         return self._meta.children(self._endingPoint)
@@ -329,7 +386,7 @@ class MySQL:
 
         sortedCandidates = self._sorter.sort(candidates)
         for candidate in sortedCandidates:
-            candidate.printExpired()
+            candidate.print()
 
         if self._dryRun:
             print("Dry run - not executing")
@@ -338,9 +395,10 @@ class MySQL:
     def __buildDeletionCanidates(self, rules):
         candidates = []
 
+        meta = DeletionMeta()
         backups = self.list()
         for backup in backups:
-            candidate = DeletionCandidate().parse(backup)
+            candidate = DeletionCandidate(meta).parse(backup)
             for rule in rules:
                 candidate.rule(rule)
             candidates.append(candidate)
