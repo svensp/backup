@@ -266,7 +266,7 @@ class MySQL:
             candidate = DeletionCandidate().parse(backup)
             for rule in rules:
                 candidate.rule(rule)
-                
+            candidates.append(candidate)
 
         return candidates
 

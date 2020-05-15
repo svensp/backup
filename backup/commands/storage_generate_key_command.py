@@ -46,16 +46,8 @@ class StorageGenerateKeyCommand(Command):
     
     def __writePrivateKey(self, privateKey):
         if self.__isSecret():
-            stringFile = io.StringIO()
-            privateKey.write_private_key(stringFile)
-            privateKeyBytes = stringFile.getvalue()
-            secretYaml = '''---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: backup-key
-data:
-  id_rsa: ''' + base64.b64encode( privateKeyBytes.encode() ).decode()
+            privateKeyString = self.__privateKeyToString(privateKey)
+            secretYaml = self.__formatAsSecret(privateKeyString)
             with open('backup-key.yaml', 'w') as f:
                 f.write(secretYaml)
             return
@@ -66,3 +58,21 @@ data:
 
     def __isKey(self):
         return not self._args.secret
+
+    def __privateKeyToString(self, privateKey):
+        stringFile = io.StringIO()
+        privateKey.write_private_key(stringFile)
+        return stringFile.getvalue()
+
+    def __formatAsSecret(self, privateKeyString ):
+        privateKeyBytes = privateKeyString.encode() 
+        base64Bytes = base64.b64encode( privateKeyBytes )
+        base64Key = base64Bytes.decode()
+        secretYaml = '''---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backup-key
+data:
+  id_rsa: ''' + base64Key
+        return secretYaml
