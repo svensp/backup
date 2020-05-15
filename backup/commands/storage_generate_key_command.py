@@ -6,9 +6,6 @@ import binascii
 from .command import Command
 
 class StorageGenerateKeyCommand(Command):
-    def usePassword(self):
-        return True
-
     def __init__(self):
         self._name = "storage:generate-key"
         self._secretTarget = 'backup-key.yaml'
