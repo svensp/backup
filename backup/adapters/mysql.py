@@ -47,7 +47,9 @@ class DeletionCandidate():
 
     def __parseExpirationInterval(self, unit, amount):
         units = {
+                'day': self.daysDelta,
                 'days': self.daysDelta,
+                'week': self.weeksDelta,
                 'weeks': self.weeksDelta,
                 }
         try:
