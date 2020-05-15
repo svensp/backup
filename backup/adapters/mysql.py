@@ -27,12 +27,25 @@ class DeletionCandidate():
         if not self._backup.hasTag(tagName):
             return self
 
+        unit, amount = self.__parseRuleIntoUnitAmonut(validTime)
+        interval = self.__parseExpirationInterval(unit, amount)
+
+        newExpirationTime = self._backup.getCreationDate() + interval
+        if self.isLater(newExpirationTime):
+            self._expirationTime = newExpirationTime
+            
+        return self
+
+    def __parseRuleIntoUnitAmonut(self, validTime):
         result = re.match('([0-9]+)(.*)', validTime)
         if not result:
             raise ValueError(validTime+' could not be parsed as valid time')
         amount = int(result.group(1))
         unit = result.group(2)
 
+        return unit, amount
+
+    def __parseExpirationInterval(self, unit, amount):
         units = {
                 'days': self.daysDelta,
                 'weeks': self.weeksDelta,
@@ -42,11 +55,18 @@ class DeletionCandidate():
         except KeyError:
             validUnits = ','.join( units.keys() )
             raise KeyError(unit+' is not a valid unit. Accepted values: '+validUnits)
-        newExpirationTime = self._backup.getCreationDate() + interval
-        if not self._expirationTime or newExpirationTime < self._expirationTime:
-            self._expirationTime = newExpirationTime
+
+        return interval
+
+    def isLater(self, newExpirationTime):
+        if not self._expirationTime:
+            return True
             
-        return self
+        isLater = newExpirationTime > self._expirationTime
+        if isLater:
+            return True
+
+        return False
 
     def daysDelta(self, amount):
         return datetime.timedelta(days=amount)
