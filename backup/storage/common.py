@@ -72,6 +72,10 @@ class Resort:
     def fileContent(self, path):
         return self._storage.resort(self._name).adapter(self._currentAdapter).fileContent(path)
 
+    def remove(self, remotePath):
+        self._storage.resort(self._name).adapter(self._currentAdapter) \
+                .remove(remotePath, True)
+
     def upload(self, localPath, remotePath):
         self._storage.resort(self._name).adapter(self._currentAdapter) \
                 .upload(localPath, remotePath, True)

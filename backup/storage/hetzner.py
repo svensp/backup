@@ -170,6 +170,16 @@ class HetznerStorage:
         with self.__sftp.file( path ) as file:
             return file.read()
 
+    def remove(self, remotePath, verbose=False):
+        fullRemotePath = '/'.join([
+            self.__path,
+            self._currentResort,
+            self.currentAdapter,
+            remotePath,
+            ])
+
+        self.__rmdir(fullRemotePath, verbose)
+
     def upload(self, localPath, remotePath, verbose=False):
         fullRemotePath = '/'.join([
             self.__path,

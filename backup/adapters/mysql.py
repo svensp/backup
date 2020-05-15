@@ -27,6 +27,10 @@ class DeletionCandidate():
         self._expirationTime = None
         self._meta = meta
 
+    def remove(self, resort):
+        self._backup.remove(resort)
+        return self
+
     @classmethod
     def byBackup(cls, dict, backup):
         return dict[backup.getName()]
@@ -240,6 +244,10 @@ class MySQLBackup:
         self._sorter = sorter
         self._tags = []
 
+    def remove(self, resort):
+        resort.remove(self._name)
+        return self
+
     def getName(self):
         return self._name
 
@@ -391,6 +399,12 @@ class MySQL:
         if self._dryRun:
             print("Dry run - not executing")
             return
+
+        for candidate in candidates:
+            if not candidate.shouldDelete():
+                continue
+            candidate.remove( self._resort.adapter('mysql') )
+                
 
     def __buildDeletionCanidates(self, rules):
         candidates = []
