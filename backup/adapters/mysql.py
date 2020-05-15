@@ -75,6 +75,9 @@ class DeletionCandidate():
         return datetime.timedelta(weeks=amount)
 
     def expired(self):
+        if not self._expirationTime:
+            return False
+
         return self._expirationTime < datetime.datetime.now()
 
     def printExpiration(self):
