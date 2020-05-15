@@ -1,5 +1,6 @@
 import os
 import stat
+import getpass
 from paramiko.transport import Transport
 from paramiko.sftp_client import SFTPClient
 from paramiko.rsakey import RSAKey
@@ -32,13 +33,19 @@ class HetznerStorage:
     def __connect(self):
         hostKey = self.__getHostKey()
         if self._usePassword:
-            self.__transport.connect(hostKey, self.__username, self.__password)
+            password = __password
+            if not password:
+                password = self.__promptPassword()
+            self.__transport.connect(hostKey, self.__username, __password)
         else:
             privateKey = self.__loadKey()
             self.__transport.connect(hostKey, self.__username, pkey=privateKey)
 
         self.__sftp = SFTPClient.from_transport(self.__transport)
         return self
+
+    def __promptPassword(self):
+        return getpass('Storagebox password:')
 
     def __getHostKey(self):
         if self.__hostKey == 'any':
