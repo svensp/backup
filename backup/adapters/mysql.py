@@ -1,27 +1,69 @@
 import configparser
+import datetime
 import os
-import sys
+import pyAesCrypt
+import re
 import resource
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
-import pyAesCrypt
+import time
 
 class DeletionCandidate():
     def __init__(self):
         self._expirationTime = None
 
+    def getName(self):
+        return self._backup.getName()
+
     def parse(self, backup):
-        self.backup = backup
+        self._backup = backup
         return self
 
     def rule(self, rule):
         tagName, validTime = rule.split(':')
-        if not self.backup.hasTag(tagName):
+        if not self._backup.hasTag(tagName):
             return self
+
+        result = re.match('([0-9]+)(.*)', validTime)
+        if not result:
+            raise ValueError(validTime+' could not be parsed as valid time')
+        amount = int(result.group(1))
+        unit = result.group(2)
+
+        units = {
+                'days': self.daysDelta,
+                'weeks': self.weeksDelta,
+                }
+        try:
+            interval = units[unit](amount)
+        except KeyError:
+            validUnits = ','.join( units.keys() )
+            raise KeyError(unit+' is not a valid unit. Accepted values: '+validUnits)
+        newExpirationTime = self._backup.getCreationDate() + interval
+        if not self._expirationTime or newExpirationTime < self._expirationTime:
+            self._expirationTime = newExpirationTime
             
         return self
+
+    def daysDelta(self, amount):
+        return datetime.timedelta(days=amount)
+
+    def weeksDelta(self, amount):
+        return datetime.timedelta(weeks=amount)
+
+    def expired(self):
+        return self._expirationTime < datetime.datetime.now()
+
+    def printExpiration(self):
+        self._backup.print(suffix=' expires at '+str(self._expirationTime) )
+
+    def printExpired(self):
+        if not self.expired():
+            return
+        self._backup.print(suffix=' has expired at '+str(self._expirationTime))
 
 class Finder():
     def backups(self, backups):
@@ -34,7 +76,7 @@ class Finder():
 
 class Sorter():
     def sort(self, backups):
-        return sorted(backups, key=lambda backup: backup._name)
+        return sorted(backups, key=lambda backup: backup.getName())
 
 class LatestTagFinder(Finder):
     def __init__(self, sorter=Sorter()):
@@ -120,6 +162,9 @@ class MySQLBackup:
         self._sorter = sorter
         self._tags = []
 
+    def getName(self):
+        return self._name
+
     def addTag(self, tag):
         if tag in self._tags:
             return self
@@ -184,11 +229,11 @@ class MySQLBackup:
     def isFull(self):
         return self._full
 
-    def print(self, indent = 0, prefix=''):
+    def print(self, indent = 0, prefix='', suffix=''):
         tags = self._tags
         tagList = ','.join(self._tags)
         tagInfo = ' tags:'+tagList
-        print( (' ' * indent) + prefix + self._name + tagInfo)
+        print( (' ' * indent) + prefix + self._name + tagInfo + suffix)
 
     def printRecursive(self, indent = 0):
         self.print(indent)
@@ -198,7 +243,9 @@ class MySQLBackup:
             if child is self:
                 continue
             child.printRecursive(indent + 2)
-                
+
+    def getCreationDate(self):
+        return datetime.datetime.strptime(self._name, '%Y-%m-%d_%H-%M')
 
     def getHistory(self):
         history = [self]
@@ -226,7 +273,7 @@ class MySQLBackup:
         return self
 
 class MySQL:
-    def __init__(self):
+    def __init__(self, sorter=Sorter()):
         self._mysqlHost = os.environ.get('MYSQL_HOST', 'mysql')
         self._mysqlPort = os.environ.get('MYSQL_PORT', '3306')
         self._mysqlUsername = os.environ.get('MYSQL_USERNAME', 'backup')
@@ -236,6 +283,7 @@ class MySQL:
         self._password = os.environ.get('MYSQL_ENC_PASSWORD')
         self._assetBase = os.path.dirname(os.path.realpath(__file__))+'/assets'
         self._tags = []
+        self._sorter = sorter
         self._dryRun = False
         self._specialNames = {
                 'latest-full-backup': LatestFullFinder(),
@@ -253,6 +301,10 @@ class MySQL:
 
     def pruneBackups(self, rules):
         candidates = self.__buildDeletionCanidates(rules)
+
+        sortedCandidates = self._sorter.sort(candidates)
+        for candidate in sortedCandidates:
+            candidate.printExpired()
 
         if self._dryRun:
             print("Dry run - not executing")
