@@ -265,12 +265,15 @@ class HetznerStorage:
                         break
                     localFile.write(data)
 
+    def generateId(self):
+        return RSAKey.generate(4096)
 
-    def copyId(self):
+    def copyId(self, privateKey = None):
         if '.ssh' not in self.__sftp.listdir('/'):
             self.__sftp.mkdir('/.ssh', 0o700)
 
-        privateKey = self.__loadKey()
+        if not privateKey:
+            privateKey = self.__loadKey()
 
         with self.__sftp.open('/.ssh/authorized_keys', 'r') as f:
             authorizedKeys = f.read()

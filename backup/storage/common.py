@@ -40,7 +40,7 @@ class Resort:
         except AttributeError:
             pass
 
-    def initMySQL(self, copies):
+    def initMySQL(self):
         try:
             self._storage.resort(self._name).createAdapter('mysql')
         except OSError:

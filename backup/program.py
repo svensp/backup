@@ -57,6 +57,7 @@ class Program:
         commands = {}
 
         CommandContainer.storageAuth().register(commands)
+        CommandContainer.storageGenerateKey().register(commands)
         CommandContainer.resortsList().register(commands)
         CommandContainer.resortsCreate().register(commands)
         CommandContainer.resortsRemove().register(commands)
@@ -71,5 +72,6 @@ class Program:
         CommandContainer.mysqlBackup().register(commands)
         CommandContainer.mysqlRestore().register(commands)
         CommandContainer.mysqlHistory().register(commands)
+        CommandContainer.mysqlPrune().register(commands)
 
         return commands

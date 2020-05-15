@@ -11,23 +11,15 @@ class MysqlCreateCommand(Command):
             self.printHelp()
             return 1
 
-        copies = 2
-        if len(parameters) > 1:
-            lastParameterIndex = len(parameters) - 1
-            lastParameter = parameters[lastParameterIndex]
-            copies = int(lastParameter)
-            
-            
         resortName = parameters[0]
         resort = self._storage.findResort(resortName)
 
         print("Creating mysql for resort"+resortName)
-        resort.initMySQL(copies);
+        resort.initMySQL();
         print("Created mysql for resort"+resortName)
 
     def printHelp(self):
         print("Usage:")
-        print(self._name+" RESORTNAME [COPIES]\n")
+        print(self._name+" RESORTNAME\n")
         print("Make sure file backup is available in a resort")
         print("- RESORTNAME: The resort in which to make file backup available")
-        print("- COPIES: The number of copies to create. Defaults to 2")

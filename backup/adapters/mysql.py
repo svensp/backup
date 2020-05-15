@@ -8,6 +8,21 @@ import tarfile
 import tempfile
 import pyAesCrypt
 
+class DeletionCandidate():
+    def __init__(self):
+        self._expirationTime = None
+
+    def parse(self, backup):
+        self.backup = backup
+        return self
+
+    def rule(self, rule):
+        tagName, validTime = rule.split(':')
+        if not self.backup.hasTag(tagName):
+            return self
+            
+        return self
+
 class Finder():
     def backups(self, backups):
         self.backups = backups
@@ -221,16 +236,39 @@ class MySQL:
         self._password = os.environ.get('MYSQL_ENC_PASSWORD')
         self._assetBase = os.path.dirname(os.path.realpath(__file__))+'/assets'
         self._tags = []
+        self._dryRun = False
         self._specialNames = {
                 'latest-full-backup': LatestFullFinder(),
                 'latest-backup': LatestFinder(),
                 'latest-tag': LatestTagFinder(),
                 }
 
+    def dryRun(self, dryRun):
+        self._dryRun = dryRun
+        return self
 
     def resort(self, resort):
         self._resort = resort
         return self
+
+    def pruneBackups(self, rules):
+        candidates = self.__buildDeletionCanidates(rules)
+
+        if self._dryRun:
+            print("Dry run - not executing")
+            return
+
+    def __buildDeletionCanidates(self, rules):
+        candidates = []
+
+        backups = self.list()
+        for backup in backups:
+            candidate = DeletionCandidate().parse(backup)
+            for rule in rules:
+                candidate.rule(rule)
+                
+
+        return candidates
 
     def incrementalBackup(self, name, parentName, dataDir):
         parent = self.find(parentName)

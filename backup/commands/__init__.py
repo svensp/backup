@@ -1,6 +1,7 @@
 from dependency_injector import containers
 from dependency_injector import providers
 from .storage_auth_command import StorageAuthCommand
+from .storage_generate_key_command import StorageGenerateKeyCommand
 from .resorts_list_command import ResortsListCommand
 from .resorts_create_command import ResortsCreateCommand
 from .resorts_remove_command import ResortsRemoveCommand
@@ -15,9 +16,11 @@ from .mysql_list_command import MysqlListCommand
 from .mysql_backup_command import MysqlBackupCommand
 from .mysql_restore_command import MysqlRestoreCommand
 from .mysql_history_command import MysqlHistoryCommand
+from .mysql_prune_command import MysqlPruneCommand
 
 class CommandContainer(containers.DeclarativeContainer):
     storageAuth = providers.Factory(StorageAuthCommand)
+    storageGenerateKey = providers.Factory(StorageGenerateKeyCommand)
 
     resortsList = providers.Factory(ResortsListCommand)
     resortsCreate = providers.Factory(ResortsCreateCommand)
@@ -35,3 +38,4 @@ class CommandContainer(containers.DeclarativeContainer):
     mysqlBackup = providers.Factory(MysqlBackupCommand)
     mysqlRestore = providers.Factory(MysqlRestoreCommand)
     mysqlHistory = providers.Factory(MysqlHistoryCommand)
+    mysqlPrune = providers.Factory(MysqlPruneCommand)
