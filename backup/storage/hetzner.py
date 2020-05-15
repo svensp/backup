@@ -33,10 +33,10 @@ class HetznerStorage:
     def __connect(self):
         hostKey = self.__getHostKey()
         if self._usePassword:
-            password = __password
+            password = self.__password
             if not password:
                 password = self.__promptPassword()
-            self.__transport.connect(hostKey, self.__username, __password)
+            self.__transport.connect(hostKey, self.__username, password)
         else:
             privateKey = self.__loadKey()
             self.__transport.connect(hostKey, self.__username, pkey=privateKey)
@@ -45,7 +45,7 @@ class HetznerStorage:
         return self
 
     def __promptPassword(self):
-        return getpass('Storagebox password:')
+        return getpass.getpass('Storagebox password:')
 
     def __getHostKey(self):
         if self.__hostKey == 'any':
