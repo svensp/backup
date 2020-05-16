@@ -421,6 +421,8 @@ class MySQL:
 
     def incrementalBackup(self, name, parentName, dataDir):
         parent = self.find(parentName)
+        print('Basing backup on:')
+        parent.print()
 
         return self.__backup(name, dataDir, parent._endingPoint)
 
@@ -502,9 +504,7 @@ class MySQL:
         specialName = specialParameters.pop(0)
         if specialName in self._specialNames.keys():
             specialNameFinder = self._specialNames[specialName]
-            #return specialNameFinder.parameters(specialParameters).find(availableBackups)
-            specialNameFinder.parameters(specialParameters).find(availableBackups).print()
-            sys.exit(0)
+            return specialNameFinder.parameters(specialParameters).find(availableBackups)
 
         for backup in availableBackups:
             if backup.isNamed(name):
