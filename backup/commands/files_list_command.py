@@ -24,7 +24,9 @@ class FilesListCommand(Command):
             repositoryNumber = parameters[1]
 
         resort.passAdapters(self)
-        print( self._borg.list(repositoryNumber) )
+        for backup in self._borg.list(repositoryNumber):
+            backup.print()
+
 
     def printHelp(self):
         print("Usage:")

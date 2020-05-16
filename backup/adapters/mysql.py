@@ -419,22 +419,21 @@ class MySQL:
 
         return candidates
 
-    def incrementalBackup(self, name, parentName, dataDir):
+    def incrementalBackup(self, name, parentName):
         parent = self.find(parentName)
         print('Basing backup on:')
         parent.print()
 
-        return self.__backup(name, dataDir, parent._endingPoint)
+        return self.__backup(name, parent._endingPoint)
 
-    def fullBackup(self, name, dataDir):
-        return self.__backup(name, dataDir)
+    def fullBackup(self, name):
+        return self.__backup(name)
 
     def tags(self, tags):
         self._tags = tags
         return self
 
-    def __backup(self, name, dataDir, baseLsn = None):
-        dataDirAbsolute = os.path.abspath(dataDir)
+    def __backup(self, name, baseLsn = None):
         fileLimit = self.__getFileLimit()
         with tempfile.TemporaryDirectory() as tempDirectory:
             backupDirectory = tempDirectory+'/backup'
@@ -442,7 +441,6 @@ class MySQL:
             command = [
                 'mariabackup',
                 '--backup',
-                '--datadir='+dataDirAbsolute,
                 '--target-dir='+backupDirectory,
                 '--host='+self._mysqlHost,
                 '--user='+self._mysqlUsername,

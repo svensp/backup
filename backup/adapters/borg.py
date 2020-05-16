@@ -1,5 +1,24 @@
+import datetime
+import dateutil.parser
+import json
 import os
 import subprocess
+
+class FileBackup():
+    def parse(self, dict):
+        self._name = dict['name']
+        self._time = dateutil.parser.isoparse(dict['time'])
+        return self
+
+    def getName(self):
+        return self._name
+
+    def inject(self, list):
+        list.append(self)
+        return self
+
+    def print(self):
+        print('- '+self._name+' made at '+str(self._time) )
 
 class Borg:
     def __init__(self):
@@ -73,14 +92,29 @@ class Borg:
         print("Initialized Repository "+str(repositoryNumber)+" successfully")
         return self
 
+    def remove(self, name, repositoryNumber):
+        self.__findBackup(name, repositoryNumber)
+        print("Removing backup "+name+" from Repository "+str(repositoryNumber))
+        completedProcess = self.command([
+            'delete',
+            '::'+name,
+            ], repositoryNumber)
+        if completedProcess.returncode != 0:
+            print("Process did not return success:")
+            print("Code: "+ str(completedProcess.returncode))
+            print( completedProcess.stdout.decode('utf-8') )
+            print( completedProcess.stderr.decode('utf-8') )
+            return self
+        print("Removal of "+name+" from Repository "+str(repositoryNumber)+" finished successfully")
+        return self
+
     def backup(self, name, target, repositoryNumber):
-        repo = self.__makeRepo(repositoryNumber)
         print("Backing up "+target+" to Repository "+str(repositoryNumber))
         completedProcess = self.command([
             'create',
             '::'+name,
-            target
-            ], repositoryNumber)
+            '.'
+            ], repositoryNumber, directory=target)
         if completedProcess.returncode != 0:
             print("Process did not return success:")
             print("Code: "+ str(completedProcess.returncode))
@@ -106,7 +140,6 @@ class Borg:
             return self
 
     def mount(self, name, target, repositoryNumber):
-        repo = self.__makeRepo(repositoryNumber)
         print("Mounting backup "+name+" from Repository "+str(repositoryNumber)+' to '+target)
         print("The borg mount is run in foreground to facilitate usage inside Docker")
         print("Please cancel the program with an interrupt (control+c) after you are done.")
@@ -127,10 +160,9 @@ class Borg:
 
 
     def list(self, repositoryNumber):
-        repo = self.__makeRepo(repositoryNumber)
-        print("Listing file backups in repository "+repositoryNumber)
         completedProcess = self.command([
             'list',
+            '--json',
             '::'
             ], repositoryNumber)
         if completedProcess.returncode != 0:
@@ -139,7 +171,26 @@ class Borg:
             print( completedProcess.stdout.decode('utf-8') )
             print( completedProcess.stderr.decode('utf-8') )
             return self
-        return completedProcess.stdout.decode('utf-8')
+        output = completedProcess.stdout.decode('utf-8')
+        decodedOutput = json.loads(output)
+        return self.__archivesToBackups(decodedOutput['archives'])
+
+    def __archivesToBackups(self, list):
+        backups = []
+        for archive in list:
+            backup = FileBackup().parse(archive)
+            backup.inject(backups)
+        sortedBackups = sorted(backups, key=lambda backup : backup._time)
+        return sortedBackups
+            
+            
+    def restore(self, name, target, repositoryNumber):
+        backup = self.__findBackup(name, repositoryNumber)
+        print("Restoring backup "+backup.getName()+" from Repository "+str(repositoryNumber)+' to '+target)
+        completedProcess = self.command([
+            'extract',
+            '::'+backup.getName()
+            ], repositoryNumber, directory=target)
 
     def prune(self, repositoryNumber):
         repo = self.__makeRepo(repositoryNumber)
@@ -159,7 +210,7 @@ class Borg:
             return self
         return completedProcess.stdout.decode('utf-8')
 
-    def command(self, args, repoNumber):
+    def command(self, args, repoNumber, directory=None):
         return subprocess.run(
                 ['borgbackup'] + args,
                 capture_output=True,
@@ -169,10 +220,16 @@ class Borg:
                 'BORG_REPO': self.__makeRepo(repoNumber),
                 'SSH_AUTH_SOCK': os.environ.get('SSH_AUTH_SOCK'),
                 'BORG_RSH': "ssh -o StrictHostKeyChecking=accept-new -i "+self._keyFilePath
-                })
+                }, cwd=directory, check=True)
 
     def __makeRepo(self, number):
         return 'ssh://'+self._user+'@'+self._host+':'+str(self._port)+'/.'+self._path+'/repo'+str(number)
+
+    def __findBackup(self, target, repositoryNumber):
+        if target == 'latest':
+            return self.list(repositoryNumber)[-1]
+            
+        return target
 
     def getRepositories(self):
         repos = []

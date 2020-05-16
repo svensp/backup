@@ -330,7 +330,6 @@ class HetznerStorage:
             return self.__loadFromAgent()
 
     def __loadFromAgent(self):
-        print("Failed to load ssh key - trying to connect to ssh agent")
         agent = Agent()
         keys = agent.get_keys()
         if len(keys) == 0:

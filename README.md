@@ -27,3 +27,9 @@ reading the incoming changes to them through the binary log to create lightning
 fast backups - as long as you're using the InnoDB storage engine.
 
 ### Borgbackup
+Borgbackup is a deduplicating backup solution. This means it will cut your
+files into chunks, save the chunks and calculate their hashes.  
+This has the benefit of a traditional incremental file backup that only files
+are actually written again which have changed but improves it by the fact that
+even when large files change only the chunks which actually changed are written
+again.

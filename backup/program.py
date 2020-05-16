@@ -58,15 +58,20 @@ class Program:
 
         CommandContainer.storageAuth().register(commands)
         CommandContainer.storageGenerateKey().register(commands)
+
         CommandContainer.resortsList().register(commands)
         CommandContainer.resortsCreate().register(commands)
         CommandContainer.resortsRemove().register(commands)
+
         CommandContainer.filesCreate().register(commands)
+        CommandContainer.filesPopulate().register(commands)
         CommandContainer.filesBackup().register(commands)
+        CommandContainer.filesRemove().register(commands)
         CommandContainer.filesList().register(commands)
         CommandContainer.filesMount().register(commands)
         CommandContainer.filesUmount().register(commands)
         CommandContainer.filesPrune().register(commands)
+
         CommandContainer.mysqlCreate().register(commands)
         CommandContainer.mysqlList().register(commands)
         CommandContainer.mysqlBackup().register(commands)

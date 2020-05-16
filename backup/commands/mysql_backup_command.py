@@ -31,20 +31,19 @@ class MysqlBackupCommand(Command):
             tags.append('incremental')
             parentName = args.parent[0]
             print("Creating incremental Backup "+name+" based on "+parentName)
-            self._mysql.tags(tags).incrementalBackup(name, parentName, dataDir)
+            self._mysql.tags(tags).incrementalBackup(name, parentName)
             print("Created incremental Backup "+name+" based on "+parentName)
             return 0
 
         tags.append('full')
         print("Creating complete Backup "+name)
-        self._mysql.tags(tags).fullBackup(name, dataDir)
+        self._mysql.tags(tags).fullBackup(name)
         print("Created complete Backup "+name)
         return 0
 
     def __parseArgs(self, parameters):
         parser = argparse.ArgumentParser()
         parser.add_argument('resortName', help='The resort in which to create the backup')
-        parser.add_argument('dataDir', help='The data directory of the mariadb server')
         parser.add_argument('--parent', nargs=1, help='Create an incremental backup based on the given parent')
         parser.add_argument('--tags', nargs='*', help='Tags')
         return parser.parse_args(parameters)
