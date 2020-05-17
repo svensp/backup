@@ -216,6 +216,9 @@ class Borg:
         return completedProcess.stdout.decode('utf-8')
 
     def command(self, args, repoNumber, directory=None, check=True):
+        if directory is None:
+            directory = os.getcwd()
+
         return subprocess.run(
                 ['borgbackup'] + args,
                 capture_output=True,
