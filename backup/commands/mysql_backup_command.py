@@ -20,7 +20,6 @@ class MysqlBackupCommand(Command):
         resort.passAdapters(self)
 
         name = datetime.now().strftime('%Y-%m-%d_%H-%M')
-        dataDir = args.dataDir
 
         tags = args.tags
         if not tags:
