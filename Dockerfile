@@ -12,6 +12,7 @@ RUN apt-get update \
       pyAesCrypt \
       dependency-injector \
       python-dateutil \
+      prometheus_client \
    && rm -Rf /var/lib/apt/lists/* \
    && mkdir -p /home/user
 
