@@ -1,5 +1,6 @@
 import argparse
 import time
+import sys
 from datetime import datetime
 from datetime import timedelta
 from prometheus_client import start_http_server
@@ -30,9 +31,6 @@ class PrometheusMetricsCommand(Command):
                 ['resort', 'repository']
                 )
 
-        for resort in self._storage.getResorts():
-            resort.passAdapters(self)
-
         self.__initialScrape()
         start_http_server(self._args.port)
 
@@ -56,10 +54,20 @@ class PrometheusMetricsCommand(Command):
             print("Scraping "+resort._name)
             resort.passAdapters(self)
             if self._borg:
-                self._borg.scrape(self._latestBorg)
+                try:
+                    self._borg.scrape(self._latestBorg)
+                except (KeyboardInterrupt, SystemExit):
+                    raise
+                except:
+                    print("Failed to scrape borg: ", sys.exc_info()[0])
 
             if self._mysql:
-                self._mysql.scrape(self._latestMysql)
+                try:
+                    self._mysql.scrape(self._latestMysql)
+                except (KeyboardInterrupt, SystemExit):
+                    raise
+                except:
+                    print("Failed to parse mysql", sys.exc_info()[0])
                 
         print('Scraped')
 
