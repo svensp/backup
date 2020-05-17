@@ -19,9 +19,9 @@ class HetznerStorage:
         self.__password = os.environ.get('HETZNER_PASSWORD')
         self.__path = os.environ.get('HETNZER_PATH', '/backups')
         self.__hostKey = os.environ.get('HETZNER_HOSTKEY')
+        self.__transport = None
         defaultSSHKeyFilePath = os.environ.get('HOME')+"/.ssh/id_rsa"
         self.__keyFilePath = os.environ.get('HETZNER_SSHKEY', defaultSSHKeyFilePath)
-        self.__transport = Transport( (self.__host, self.__port) )
         self._usePassword = False
         self.uploadChunkSize = int(os.environ.get('UPLOAD_CHUNK_SIZE', '2097152'))
         self.downloadChunkSize = int(os.environ.get('DOWLOAD_CHUNK_SIZE', '2097152'))
@@ -32,6 +32,11 @@ class HetznerStorage:
 
     def __connect(self):
         hostKey = self.__getHostKey()
+
+        if self.__transport:
+            self.__transport.close()
+        self.__transport = Transport( (self.__host, self.__port) )
+
         if self._usePassword:
             password = self.__password
             if not password:

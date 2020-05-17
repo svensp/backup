@@ -19,7 +19,7 @@ class FileBackup():
         return self
 
     def setTimestamp(self, gauge):
-        gauge.set(self._time)
+        gauge.set(self._time.timestamp())
         return self
 
     def print(self):
@@ -250,8 +250,9 @@ class Borg:
             try:
                 backup = self.__findBackup('latest', repositoryNumber)
             except IndexError:
-                gauge.labels(self._name, 'repository_'+str(repositoryNumber)).set(0)
+                gauge.labels(self._resort._name, 'repository_'+str(repositoryNumber)).set(0)
                 return self
 
-            backup.setTimestamp( gauge.labels(self._name, 'repository_'+str(repositoryNumber)) )
+            backup.print()
+            backup.setTimestamp( gauge.labels(self._resort._name, 'repository_'+str(repositoryNumber)) )
             return self

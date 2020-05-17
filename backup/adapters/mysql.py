@@ -152,7 +152,7 @@ class Finder():
 
 class Sorter():
     def sort(self, backups):
-        return sorted(backups, key=lambda backup: backup.getName())
+        return sorted(backups, key=lambda backup: backup.getCreationDate())
 
 class LatestTagFinder(Finder):
     def __init__(self, sorter=Sorter()):
@@ -592,8 +592,9 @@ class MySQL:
         for directory in self._resort.adapter('mysql').listFolders(): 
             backup = self.__parseBackup(directory, meta)
             backup.inject(backups)
+        sortedBackups = self._sorter.sort(backups)
             
-        return backups
+        return sortedBackups
 
     def __parseBackup(self, directory, meta):
         backupName = os.path.basename(directory)

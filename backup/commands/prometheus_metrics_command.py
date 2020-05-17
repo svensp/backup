@@ -21,11 +21,11 @@ class PrometheusMetricsCommand(Command):
 
     def run(self, parameters):
         self.__parseArgs(parameters)
-        self._latestMysql = Gauge('cloudbackup_mysql_latest',
+        self._latestMysql = Gauge('cloudbackup_mysql_latest_timestamp',
                 'Latest backup',
                 ['resort']
                 )
-        self._latestBorg = Gauge('cloudbackup_borg_latest',
+        self._latestBorg = Gauge('cloudbackup_borg_latest_timestamp',
                 'Latest backup',
                 ['resort', 'repository']
                 )
@@ -47,19 +47,20 @@ class PrometheusMetricsCommand(Command):
             self.__waitInterval()
 
     def __scrape(self):
+        self._storage.load()
         self._lastScrapeStart = datetime.now()
+
+        print('Scraping')
 
         for resort in self._storage.getResorts():
             print("Scraping "+resort._name)
             resort.passAdapters(self)
             if self._borg:
                 self._borg.scrape(self._latestBorg)
+
             if self._mysql:
                 self._mysql.scrape(self._latestMysql)
                 
-    
-        print('Scraping')
-        time.sleep(5)
         print('Scraped')
 
     def __waitInterval(self):
