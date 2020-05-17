@@ -353,10 +353,24 @@ class MySQLBackup:
     def getParents(self):
         if self._full:
             return None
-        return self._meta.parents(self._startingPoint)
+        parents = self._meta.parents(self._startingPoint)
+        return self.__cantBeOwnParent(parents)
+
+    def __cantBeOwnParent(self, parents):
+        return list( filter(lambda backup: backup._name != self._name, parents) )
+
+    def __skipEmptyParents(self, parents):
+        return list( filter(lambda backup: not backup.isEmpty()) )
+    
+    def isEmpty(self):
+        return self._startingPoint == self._endingPoint
 
     def getChildren(self):
-        return self._meta.children(self._endingPoint)
+        children = self._meta.children(self._endingPoint)
+        return self.__cantBeOwnChild(children)
+
+    def __cantBeOwnChild(self, children):
+        return list( filter(lambda backup: backup._name != self._name, children) )
 
     def inject(self, backupList):
         backupList.append(self)
