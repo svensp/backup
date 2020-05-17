@@ -11,6 +11,7 @@ RUN apt-get update \
       paramiko-ng \
       pyAesCrypt \
       dependency-injector \
+      python-dateutil \
    && rm -Rf /var/lib/apt/lists/* \
    && mkdir -p /home/user
 
