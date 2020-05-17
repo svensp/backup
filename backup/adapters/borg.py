@@ -3,6 +3,7 @@ import dateutil.parser
 import json
 import os
 import subprocess
+from prometheus_client import Gauge
 
 class FileBackup():
     def parse(self, dict):
@@ -15,6 +16,10 @@ class FileBackup():
 
     def inject(self, list):
         list.append(self)
+        return self
+
+    def setTimestamp(self, gauge):
+        gauge.set(self._time)
         return self
 
     def print(self):
@@ -164,7 +169,7 @@ class Borg:
             'list',
             '--json',
             '::'
-            ], repositoryNumber)
+            ], repositoryNumber, check=False)
         if completedProcess.returncode != 0:
             print("Process did not return success:")
             print("Code: "+ str(completedProcess.returncode))
@@ -210,7 +215,7 @@ class Borg:
             return self
         return completedProcess.stdout.decode('utf-8')
 
-    def command(self, args, repoNumber, directory=None):
+    def command(self, args, repoNumber, directory=None, check=True):
         return subprocess.run(
                 ['borgbackup'] + args,
                 capture_output=True,
@@ -220,7 +225,7 @@ class Borg:
                 'BORG_REPO': self.__makeRepo(repoNumber),
                 'SSH_AUTH_SOCK': os.environ.get('SSH_AUTH_SOCK'),
                 'BORG_RSH': "ssh -o StrictHostKeyChecking=accept-new -i "+self._keyFilePath
-                }, cwd=directory, check=True)
+                }, cwd=directory, check=check)
 
     def __makeRepo(self, number):
         return 'ssh://'+self._user+'@'+self._host+':'+str(self._port)+'/.'+self._path+'/repo'+str(number)
@@ -239,3 +244,14 @@ class Borg:
             repos.append( directoryName[start:end] )
 
         return repos
+    
+    def scrape(self, gauge):
+        for repositoryNumber in self.getRepositories():
+            try:
+                backup = self.__findBackup('latest', repositoryNumber)
+            except IndexError:
+                gauge.labels(self._name, 'repository_'+str(repositoryNumber)).set(0)
+                return self
+
+            backup.setTimestamp( gauge.labels(self._name, 'repository_'+str(repositoryNumber)) )
+            return self

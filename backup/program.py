@@ -59,6 +59,8 @@ class Program:
         CommandContainer.storageAuth().register(commands)
         CommandContainer.storageGenerateKey().register(commands)
 
+        CommandContainer.prometheusMetrics().register(commands)
+
         CommandContainer.resortsList().register(commands)
         CommandContainer.resortsCreate().register(commands)
         CommandContainer.resortsRemove().register(commands)

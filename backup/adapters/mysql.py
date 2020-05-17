@@ -376,6 +376,11 @@ class MySQLBackup:
         backupList.append(self)
         return self
 
+    def setTimestamp(self, gauge):
+        timestamp = self.getCreationDate().timestamp()
+        gauge.set(timestamp)
+        return self
+
 class MySQL:
     def __init__(self, sorter=Sorter()):
         self._mysqlHost = os.environ.get('MYSQL_HOST', 'mysql')
@@ -600,3 +605,13 @@ class MySQL:
                 .name(backupName).meta(meta) \
                 .parseInfo(infoContent) \
                 .parseIni(cloudbackupIni)
+    
+    def scrape(self, gauge):
+        try:
+            backup = self.find('latest-backup')
+        except IndexError:
+            gauge.labels(self._resort._name).set(0)
+            return self
+
+        backup.setTimestamp( gauge.labels(self._resort._name) )
+        return self

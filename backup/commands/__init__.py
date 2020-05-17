@@ -5,6 +5,7 @@ from .storage_generate_key_command import StorageGenerateKeyCommand
 from .resorts_list_command import ResortsListCommand
 from .resorts_create_command import ResortsCreateCommand
 from .resorts_remove_command import ResortsRemoveCommand
+from .prometheus_metrics_command import PrometheusMetricsCommand
 from .files_create_command import FilesCreateCommand
 from .files_populate_command import FilesPopulateCommand
 from .files_backup_command import FilesBackupCommand
@@ -23,6 +24,8 @@ from .mysql_prune_command import MysqlPruneCommand
 class CommandContainer(containers.DeclarativeContainer):
     storageAuth = providers.Factory(StorageAuthCommand)
     storageGenerateKey = providers.Factory(StorageGenerateKeyCommand)
+
+    prometheusMetrics = providers.Factory(PrometheusMetricsCommand)
 
     resortsList = providers.Factory(ResortsListCommand)
     resortsCreate = providers.Factory(ResortsCreateCommand)
