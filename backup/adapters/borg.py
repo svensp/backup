@@ -175,7 +175,7 @@ class Borg:
             print("Code: "+ str(completedProcess.returncode))
             print( completedProcess.stdout.decode('utf-8') )
             print( completedProcess.stderr.decode('utf-8') )
-            return self
+            raise ValueError("List process failed")
         output = completedProcess.stdout.decode('utf-8')
         decodedOutput = json.loads(output)
         return self.__archivesToBackups(decodedOutput['archives'])
@@ -226,7 +226,7 @@ class Borg:
                 'BORG_NEW_PASSPHRASE': self._borgPassword,
                 'BORG_PASSPHRASE': self._borgPassword,
                 'BORG_REPO': self.__makeRepo(repoNumber),
-                'SSH_AUTH_SOCK': os.environ.get('SSH_AUTH_SOCK'),
+                'SSH_AUTH_SOCK': os.environ.get('SSH_AUTH_SOCK', ''),
                 'BORG_RSH': "ssh -o StrictHostKeyChecking=accept-new -i "+self._keyFilePath
                 }, cwd=directory, check=check)
 
