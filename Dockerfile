@@ -16,6 +16,8 @@ RUN apt-get update \
    && rm -Rf /var/lib/apt/lists/* \
    && mkdir -p /home/user
 
+RUN adduser user
+
 ENV PATH /opt/cloudbackup:$PATH
 ENV HOME /home/user
 
