@@ -17,8 +17,8 @@ RUN apt-get update \
       python-dateutil \
       prometheus_client \
    && rm -Rf /var/lib/apt/lists/* \
-   && mkdir -p /home/user \
-   && chown -R user:user /home/user
+   && groupadd --gid 1000 \
+   && useradd -ms /bin/bash --uid 1000 --gid 1000 user
 
 ENV PATH /opt/cloudbackup:$PATH
 ENV HOME /home/user

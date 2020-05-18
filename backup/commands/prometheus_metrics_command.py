@@ -25,7 +25,7 @@ class PrometheusMetricsCommand(Command):
         self.__parseArgs(parameters)
         self._latestMysql = Gauge('cloudbackup_mysql_latest_timestamp',
                 'Latest backup',
-                ['resort']
+                ['resort', 'is_full']
                 )
         self._latestBorg = Gauge('cloudbackup_borg_latest_timestamp',
                 'Latest backup',
@@ -90,7 +90,7 @@ class PrometheusMetricsCommand(Command):
         parser = argparse.ArgumentParser()
         parser.add_argument('--interval',
                 required=False,
-                default=15,
+                default=30,
                 help='Interval in minutes between scrapes',
                 type=int
                 )
