@@ -1,6 +1,7 @@
 import argparse
 import time
 import sys
+import traceback
 from datetime import datetime
 from datetime import timedelta
 from prometheus_client import start_http_server
@@ -60,9 +61,7 @@ class PrometheusMetricsCommand(Command):
                     raise
                 except:
                     print("Failed to scrape borg: ")
-                    print(sys.exc_info()[0])
-                    print(sys.exc_info()[1])
-                    print(sys.exc_info()[2])
+                    traceback.print_exc()
 
             if self._mysql:
                 try:
@@ -71,9 +70,7 @@ class PrometheusMetricsCommand(Command):
                     raise
                 except:
                     print("Failed to parse mysql")
-                    print(sys.exc_info()[0])
-                    print(sys.exc_info()[1])
-                    print(sys.exc_info()[2])
+                    traceback.print_exc()
                 
         print('Scraped')
 
