@@ -1,5 +1,8 @@
 FROM debian:bullseye
 
+RUN addgroup user --gid 1000 \
+   && adduser user --uid 1000 --gid 1000
+
 RUN apt-get update \
    && apt-get -y install \
       python3 \
@@ -14,10 +17,8 @@ RUN apt-get update \
       python-dateutil \
       prometheus_client \
    && rm -Rf /var/lib/apt/lists/* \
-   && mkdir -p /home/user
-
-RUN addgroup user --gid 1000 \
-   && adduser user --uid 1000 --gid 1000
+   && mkdir -p /home/user \
+   && chown -R user:user /home/user
 
 ENV PATH /opt/cloudbackup:$PATH
 ENV HOME /home/user
