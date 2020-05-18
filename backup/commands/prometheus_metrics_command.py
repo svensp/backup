@@ -59,7 +59,7 @@ class PrometheusMetricsCommand(Command):
                 except (KeyboardInterrupt, SystemExit):
                     raise
                 except:
-                    print("Failed to scrape borg: ", sys.exc_info()[0])
+                    print("Failed to scrape borg: ")
                     print(sys.exc_info()[0])
                     print(sys.exc_info()[1])
                     print(sys.exc_info()[2])
