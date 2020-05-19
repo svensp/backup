@@ -620,7 +620,7 @@ class MySQL:
             backup = self._specialNames['latest-backup'].find(backups)
             backup.setTimestamp( gauge.labels(self._resort._name, 'Either') )
         except IndexError:
-            gauge.labels(self._resort._name, 'False').set(0)
+            gauge.labels(self._resort._name, 'Either').set(0)
 
     def __scrapeLatestFullBackup(self, gauge, backups):
         try:
