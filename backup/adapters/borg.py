@@ -119,13 +119,7 @@ class Borg:
             'create',
             '::'+name,
             '.'
-            ], repositoryNumber, directory=target)
-        if completedProcess.returncode != 0:
-            print("Process did not return success:")
-            print("Code: "+ str(completedProcess.returncode))
-            print( completedProcess.stdout.decode('utf-8') )
-            print( completedProcess.stderr.decode('utf-8') )
-            return self
+            ], repositoryNumber, directory=target, capture_output=False)
         print("Backup of "+target+" to Repository "+str(repositoryNumber)+" finished successfully")
         return self
 
@@ -215,13 +209,14 @@ class Borg:
             return self
         return completedProcess.stdout.decode('utf-8')
 
-    def command(self, args, repoNumber, directory=None, check=True):
+    def command(self, args, repoNumber, directory=None, check=True,
+            capture_output=True):
         if directory is None:
             directory = os.getcwd()
 
         return subprocess.run(
                 ['borgbackup'] + args,
-                capture_output=True,
+                capture_output=capture_output,
                 env={
                 'BORG_NEW_PASSPHRASE': self._borgPassword,
                 'BORG_PASSPHRASE': self._borgPassword,
