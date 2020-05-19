@@ -254,8 +254,9 @@ class Borg:
                 backup = self.__findBackup('latest', repositoryNumber)
             except IndexError:
                 gauge.labels(self._resort._name, 'repository_'+str(repositoryNumber)).set(0)
-                return self
+                continue
 
             backup.print()
             backup.setTimestamp( gauge.labels(self._resort._name, 'repository_'+str(repositoryNumber)) )
-            return self
+
+        return self
