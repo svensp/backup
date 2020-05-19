@@ -251,7 +251,6 @@ class Borg:
                 gauge.labels(self._resort._name, 'repository_'+str(repositoryNumber)).set(0)
                 continue
 
-            backup.print()
             backup.setTimestamp( gauge.labels(self._resort._name, 'repository_'+str(repositoryNumber)) )
 
         return self
