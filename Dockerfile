@@ -1,8 +1,5 @@
 FROM debian:bullseye
 
-RUN addgroup user --gid 1000 \
-   && adduser user --uid 1000 --gid 1000
-
 RUN apt-get update \
    && apt-get -y install \
       python3 \
