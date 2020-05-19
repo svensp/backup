@@ -618,13 +618,13 @@ class MySQL:
     def __scrapeLatestBackup(self, gauge, backups):
         try:
             backup = self._specialNames['latest-backup'].find(backups)
-            backup.setTimestamp( gauge.labels(self._resort._name, str(backup.isFull()) ) )
+            backup.setTimestamp( gauge.labels(self._resort._name, 'Either') )
         except IndexError:
             gauge.labels(self._resort._name, 'False').set(0)
 
     def __scrapeLatestFullBackup(self, gauge, backups):
         try:
             fullBackup = self._specialNames['latest-full-backup'].find(backups)
-            fullBackup.setTimestamp( gauge.labels(self._resort._name, str(fullBackup.isFull())) )
+            fullBackup.setTimestamp( gauge.labels(self._resort._name, 'True') )
         except IndexError:
             gauge.labels(self._resort._name, 'True').set(0)
