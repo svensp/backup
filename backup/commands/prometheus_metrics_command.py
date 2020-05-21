@@ -23,6 +23,10 @@ class PrometheusMetricsCommand(Command):
 
     def run(self, parameters):
         self.__parseArgs(parameters)
+        self._latestScrape = Gauge(
+                'cloudbackup_latest_scrape_timestamp',
+                'Last scrape of the Storage'
+                )
         self._latestMysql = Gauge('cloudbackup_mysql_latest_timestamp',
                 'Latest backup',
                 ['resort', 'is_full']
@@ -32,6 +36,7 @@ class PrometheusMetricsCommand(Command):
                 ['resort', 'repository']
                 )
 
+        self._latestScrape.set(0)
         self.__initialScrape()
         start_http_server(self._args.port)
 
@@ -71,8 +76,12 @@ class PrometheusMetricsCommand(Command):
                 except:
                     print("Failed to parse mysql")
                     traceback.print_exc()
+        self.__updateLatestScrape()
                 
         print('Scraped')
+
+    def __updateLatestScrape(self):
+        self._latestScrape.set( datetime.now().timestamp() )
 
     def __waitInterval(self):
         nextScrape = self.__calculateNextScrape()
