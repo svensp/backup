@@ -387,6 +387,7 @@ class MySQL:
         self._mysqlPort = os.environ.get('MYSQL_PORT', '3306')
         self._mysqlUsername = os.environ.get('MYSQL_USERNAME', 'backup')
         self._mysqlPassword = os.environ.get('MYSQL_PASSWORD')
+        self._mysqlDatadir = os.environ.get('MYSQL_DATADIR', False)
         self._backupCommand = os.environ.get('MYSQL_COMMAND', 'mariabackup')
         self._bufferSize = int(os.environ.get('MYSQL_ENC_BUFSIZE', 64 * 1024))
         self._password = os.environ.get('MYSQL_ENC_PASSWORD')
@@ -399,6 +400,10 @@ class MySQL:
                 'latest-backup': LatestFinder(),
                 'latest-tag': LatestTagFinder(),
                 }
+
+    def dataDir(self, dataDir):
+        self._mysqlDatadir = dataDir
+        return self
 
     def dryRun(self, dryRun):
         self._dryRun = dryRun
@@ -466,6 +471,9 @@ class MySQL:
                 '--password='+self._mysqlPassword,
                 '--port='+self._mysqlPort,
                 ]
+            if self._mysqlDatadir:
+                command.append('--datadir='+self._mysqlDatadir)
+                
             if baseLsn:
                 command.append('--incremental-lsn='+str(baseLsn))
                 

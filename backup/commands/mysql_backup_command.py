@@ -25,6 +25,8 @@ class MysqlBackupCommand(Command):
         if not tags:
             tags = []
             
+        if args.datadir:
+            self._mysql.dataDir(args.datadir)
 
         if args.parent:
             tags.append('incremental')
@@ -43,6 +45,12 @@ class MysqlBackupCommand(Command):
     def __parseArgs(self, parameters):
         parser = argparse.ArgumentParser()
         parser.add_argument('resortName', help='The resort in which to create the backup')
+        parser.add_argument(
+                '--datadir',
+                required=False,
+                default=False,
+                help='Set datadir. Only necessary if it cannot be read from the global server variables'
+                )
         parser.add_argument('--parent', nargs=1, help='Create an incremental backup based on the given parent')
         parser.add_argument('--tags', nargs='*', help='Tags')
         return parser.parse_args(parameters)
