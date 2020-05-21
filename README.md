@@ -1,6 +1,21 @@
 # backup
 Manage Backups on a Hetzner Storagebox
 
+## Index
+- Usage
+- Background
+
+## Install
+You can install cloudbackup by checking out the repository and installing the
+requirements. The prefered mode of use however is via docker container.
+
+- examples/local-backup - example script using a checked out repository
+- examples/docker-backup - example script using the docker container
+- examples/kubernetes - example manifests for use in a kubernetes cluster
+  - examples/kubernetes/metrics - Example deploy of prometheus metrics
+  - examples/kubernetes/mysql - Example backup cronjobs for mysql backups
+  - examples/metrics/files - Example backup cornjob for file backups
+
 ## Concept
 Setting up backups has always been a pain even when you did it once per server
 and everything on it magically got backed up by the existing scripts.
