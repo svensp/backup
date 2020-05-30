@@ -141,6 +141,9 @@ class DeletionCandidate():
         if self.orphaned():
             self._backup.print(suffix=' will be orphaned after the pruning')
 
+    def getCreationDate(self):
+        return self._backup.getCreationDate()
+
 class Finder():
     def backups(self, backups):
         self.backups = backups
