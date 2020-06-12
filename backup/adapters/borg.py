@@ -147,7 +147,7 @@ class Borg:
             '-f',
             '::'+name,
             target
-            ], repositoryNumber)
+            ], repositoryNumber, check=False)
         if completedProcess.returncode != 0:
             print("Process did not return success:")
             print("Code: "+ str(completedProcess.returncode))
