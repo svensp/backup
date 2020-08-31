@@ -1,0 +1,59 @@
+#!/bin/bash
+
+delete_group_id() {
+  GROUP_ID="${1}"
+  GROUP_TO_DELETE="$(getent group "${GROUP_ID}" | cut -d: -f1)"
+  delgroup "${GROUP_TO_DELETE}"
+}
+
+delete_user_id() {
+  USER_ID="${1}"
+  USER_TO_DELETE="$(getent passwd "${USER_ID}" | cut -d: -f1)"
+  deluser "${USER_TO_DELETE}"
+}
+
+group_id_exists() {
+  GROUP_ID="${1}"
+  getent group "${GROUP_ID}" > /dev/null 2>&1
+}
+
+
+user_id_exists() {
+  USER_ID="${1}"
+  getent user "${USER_ID}" > /dev/null 2>&1
+}
+
+user_name_exists() {
+  USER_NAME="${1}"
+  getent passwd | cut -d: -f1 | grep -q "${USER_NAME}"
+}
+
+# borg ssh will error out if the userid/groupid used do not actually exist
+USER_ID=${USER_ID:-}
+GROUP_ID=${GROUP_ID:-}
+if [ ! -z "$USER_ID" -a ! -z "$GROUP_ID" ] ; then
+  echo "Switching to userx"
+  export USER="userx"
+
+  if user_id_exists ${USER_ID} ; then
+    delete_user_id ${USER_ID}
+  fi
+
+  if group_id_exists ${USER_ID} ; then
+    delete_group_id ${GROUP_ID}
+  fi
+
+  if user_name_exists ${USER} ; then
+    deluser ${USER}
+  fi
+
+  groupadd -g "${GROUP_ID}" "${USER}"
+  useradd -u "${USER_ID}" -g "${USER}" "${USER}"
+fi
+
+if [ ! -z "${USER}" ] ; then
+  gosu ${USER} cloudbackup "$@"
+  exit $?
+fi
+
+cloudbackup "$@"

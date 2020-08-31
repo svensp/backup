@@ -2,6 +2,7 @@ FROM debian:bullseye
 
 RUN apt-get update \
    && apt-get -y install \
+      gosu \
       python3 \
       python3-pip \
       borgbackup \
@@ -13,13 +14,11 @@ RUN apt-get update \
       dependency-injector \
       python-dateutil \
       prometheus_client \
-   && rm -Rf /var/lib/apt/lists/* \
-   && groupadd --gid 1000 user \
-   && useradd -ms /bin/bash --uid 1000 --gid 1000 user
+   && rm -Rf /var/lib/apt/lists/*
 
 ENV PATH /opt/cloudbackup:$PATH
 ENV HOME /home/user
 
 COPY . /opt/cloudbackup
 
-ENTRYPOINT [ "cloudbackup" ]
+ENTRYPOINT [ "entrypoint" ]
