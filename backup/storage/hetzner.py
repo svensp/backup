@@ -22,6 +22,7 @@ class HetznerStorage:
         self.__transport = None
         defaultSSHKeyFilePath = os.environ.get('HOME')+"/.ssh/id_rsa"
         self.__keyFilePath = os.environ.get('HETZNER_SSHKEY', defaultSSHKeyFilePath)
+        self.__keyFileChoose = os.environ.get('HETZNER_SSHKEY_CHOOSE', 'first')
         self._usePassword = False
         self.uploadChunkSize = int(os.environ.get('UPLOAD_CHUNK_SIZE', '2097152'))
         self.downloadChunkSize = int(os.environ.get('DOWLOAD_CHUNK_SIZE', '2097152'))
@@ -340,7 +341,20 @@ class HetznerStorage:
         if len(keys) == 0:
             raise KeyError("No keys found in the ssh agent. Did you add them with ssh-add?")
             
-        return keys[0]
+        return self.__pick_key(keys)
+
+    def __pick_key(self,keys):
+        if len(keys) == 0:
+            raise KeyError("No ssh keys received from ssh agent")
+
+        if self.__keyFileChoose == 'first':
+            return keys[0]
+
+        for key in keys:
+            if key.get_base64() == self.__keyFileChoose:
+                return key
+
+        raise KeyError("No ssh key matching the given public key received from the ssh-agent")
     
     def __publicRFC4716(self, privateKey):
         # NOte: rfc4716 says 72 bytes at most but ssh-keygen into rfc4716
