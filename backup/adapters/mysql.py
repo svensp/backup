@@ -58,7 +58,7 @@ class DeletionCandidate():
         newExpirationTime = self._backup.getCreationDate() + interval
         if self.isLater(newExpirationTime):
             self._expirationTime = newExpirationTime
-            
+
         return self
 
     def __parseRuleIntoUnitAmonut(self, validTime):
@@ -88,7 +88,7 @@ class DeletionCandidate():
     def isLater(self, newExpirationTime):
         if not self._expirationTime:
             return True
-            
+
         isLater = newExpirationTime > self._expirationTime
         if isLater:
             return True
@@ -104,7 +104,7 @@ class DeletionCandidate():
     def orphaned(self):
         if self._backup.isFull():
             return False
-            
+
         parents = self._backup.getParents()
         for parent in parents:
             parentCandidate = self._meta.candidateForBackup(parent)
@@ -198,7 +198,7 @@ class LatestFullFinder(Finder):
 
         sortedFullBackups = self._sorter.sort(fullBackups)
         return sortedFullBackups[-1]
-                
+
 
 class BackupNotFoundException(Exception):
     pass
@@ -239,7 +239,7 @@ class MySQLBackupMeta:
             return self.byStartingPoint[parentEndingPoint]
         except KeyError:
             return []
-            
+
 
 class MySQLBackup:
     def __init__(self, sorter=Sorter()):
@@ -324,14 +324,17 @@ class MySQLBackup:
         tagInfo = ' tags:'+tagList
         print( (' ' * indent) + prefix + self._name + tagInfo + suffix)
 
-    def printRecursive(self, indent = 0):
+    def printRecursive(self, indent = 0, alreadyUsed = []):
         self.print(indent)
 
         sortedChildren = self._sorter.sort( self.getChildren() )
         for child in sortedChildren:
             if child is self:
                 continue
-            child.printRecursive(indent + 2)
+            if child in alreadyUsed:
+                continue
+            alreadyUsed.append(child)
+            child.printRecursive(indent + 2, alreadyUsed.copy())
 
     def getCreationDate(self):
         return datetime.datetime.strptime(self._name, '%Y-%m-%d_%H-%M')
@@ -347,7 +350,15 @@ class MySQLBackup:
         history.reverse()
         fullBackup = history.pop(0)
         return [ fullBackup, history ]
-            
+
+    def isParent(self, backup):
+        if backup in self.getParents():
+            return True
+        for parent in self.getParents():
+            if parent.isParent(backup):
+                return True
+        return False
+
     def getParent(self):
         if self._full:
             return None
@@ -355,7 +366,7 @@ class MySQLBackup:
 
     def getParents(self):
         if self._full:
-            return None
+            return []
         parents = self._meta.parents(self._startingPoint)
         return self.__cantBeOwnParent(parents)
 
@@ -364,7 +375,7 @@ class MySQLBackup:
 
     def __skipEmptyParents(self, parents):
         return list( filter(lambda backup: not backup.isEmpty()) )
-    
+
     def isEmpty(self):
         return self._startingPoint == self._endingPoint
 
@@ -431,7 +442,7 @@ class MySQL:
             if not candidate.shouldDelete():
                 continue
             candidate.remove( self._resort.adapter('mysql') )
-                
+
 
     def __buildDeletionCanidates(self, rules):
         candidates = []
@@ -476,10 +487,10 @@ class MySQL:
                 ]
             if self._mysqlDatadir:
                 command.append('--datadir='+self._mysqlDatadir)
-                
+
             if baseLsn:
                 command.append('--incremental-lsn='+str(baseLsn))
-                
+
             completedProcess = subprocess.run(command, check=True)
             self.__extractBackupInfo(backupDirectory, tempDirectory)
             tarFile = self.__compressBackup(backupDirectory, tempDirectory)
@@ -490,7 +501,7 @@ class MySQL:
                 newBackup.addTag(tag)
 
             newBackup.writeIni(tempDirectory+'/cloudbackup.ini')
-                
+
             self.__uploadBackup(tempDirectory, name)
         return self
 
@@ -600,11 +611,11 @@ class MySQL:
     def list(self):
         meta = MySQLBackupMeta()
         backups = []
-        for directory in self._resort.adapter('mysql').listFolders(): 
+        for directory in self._resort.adapter('mysql').listFolders():
             backup = self.__parseBackup(directory, meta)
             backup.inject(backups)
         sortedBackups = self._sorter.sort(backups)
-            
+
         return sortedBackups
 
     def __parseBackup(self, directory, meta):
@@ -617,15 +628,15 @@ class MySQL:
                 .name(backupName).meta(meta) \
                 .parseInfo(infoContent) \
                 .parseIni(cloudbackupIni)
-    
+
     def scrape(self, gauge):
         availableBackups = self.list()
-        
+
         self.__scrapeLatestBackup(gauge, availableBackups)
         self.__scrapeLatestFullBackup(gauge, availableBackups)
 
         return self
-    
+
     def __scrapeLatestBackup(self, gauge, backups):
         try:
             backup = self._specialNames['latest-backup'].find(backups)
