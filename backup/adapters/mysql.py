@@ -324,17 +324,31 @@ class MySQLBackup:
         tagInfo = ' tags:'+tagList
         print( (' ' * indent) + prefix + self._name + tagInfo + suffix)
 
-    def printRecursive(self, indent = 0, alreadyUsed = []):
+    def printRecursive(self, indent = 0):
         self.print(indent)
 
         sortedChildren = self._sorter.sort( self.getChildren() )
         for child in sortedChildren:
             if child is self:
                 continue
-            if child in alreadyUsed:
+            if not child.isClosestRelative(self):
                 continue
-            alreadyUsed.append(child)
-            child.printRecursive(indent + 2, alreadyUsed.copy())
+            child.printRecursive(indent + 2)
+
+    def isBefore(self, other):
+        return self.getCreationDate() < other.getCreationDate()
+
+    def getClosestRelative(self):
+        children = self.getChildren()
+        sortedChildren = self._sorter.sort(children)
+        return sortedChildren[0]
+
+    def isClosestRelative(self, other):
+        try:
+            closestRelative = other.getClosestRelative()
+            return closestRelative == self
+        except IndexError:
+            return False
 
     def getCreationDate(self):
         return datetime.datetime.strptime(self._name, '%Y-%m-%d_%H-%M')
@@ -381,10 +395,14 @@ class MySQLBackup:
 
     def getChildren(self):
         children = self._meta.children(self._endingPoint)
-        return self.__cantBeOwnChild(children)
+        withoutSelf =  self.__cantBeOwnChild(children)
+        return self.__childCantBeBefore(withoutSelf)
 
     def __cantBeOwnChild(self, children):
         return list( filter(lambda backup: backup._name != self._name, children) )
+
+    def __childCantBeBefore(self, children):
+        return list( filter(lambda backup: self.isBefore(backup), children ) )
 
     def inject(self, backupList):
         backupList.append(self)
