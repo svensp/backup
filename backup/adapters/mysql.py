@@ -222,12 +222,6 @@ class MySQLBackupMeta:
             self.byStartingPoint[startingPoint] = [ backup ]
         return self
 
-    def parent(self, childStartingPoint):
-        try:
-            return self.byEndingPoint[childStartingPoint][0]
-        except KeyError:
-            return None
-
     def parents(self, childStartingPoint):
         try:
             return self.byEndingPoint[childStartingPoint]
@@ -376,19 +370,24 @@ class MySQLBackup:
     def getParent(self):
         if self._full:
             return None
-        return self._meta.parent(self._startingPoint)
+        parents = self._meta.parents(self._startingPoint)
+        return self.__skipEmptyParents(parents)[0]
 
     def getParents(self):
         if self._full:
             return []
         parents = self._meta.parents(self._startingPoint)
-        return self.__cantBeOwnParent(parents)
+        parents = self.__cantBeOwnParent(parents)
+        return self.__parentsMustBeBefore(parents)
 
     def __cantBeOwnParent(self, parents):
         return list( filter(lambda backup: backup._name != self._name, parents) )
 
     def __skipEmptyParents(self, parents):
-        return list( filter(lambda backup: not backup.isEmpty()) )
+        return list( filter(lambda backup: not backup.isEmpty(), parents) )
+
+    def __parentsMustBeBefore(self, parents):
+        return list( filter(lambda backup: backup.isBefore(self), parents) )
 
     def isEmpty(self):
         return self._startingPoint == self._endingPoint
@@ -432,6 +431,9 @@ class MySQL:
                 'latest-backup': LatestFinder(),
                 'latest-tag': LatestTagFinder(),
                 }
+
+    def setOutput(self, output):
+        self.output = output
 
     def dataDir(self, dataDir):
         self._mysqlDatadir = dataDir
@@ -572,7 +574,15 @@ class MySQL:
         dataDirAbsolute = os.path.abspath(dataDir)
         backup = self.find(name)
         fullBackup, history = backup.getHistory()
+
+        self.output.info("Full Backup: "+fullBackup.getName())
+        self.output.info("Backup history:")
+        for backup in history:
+            self.output.info("- "+backup.getName() )
+
+        self.output.info("Restoring Full Backup")
         self.__restoreFullBackup(fullBackup, dataDirAbsolute)
+        self.output.info("Restoring Incremental Backups")
         self.__restoreIncrementalBackups(history, dataDirAbsolute)
 
         self.__copyDockerCompose(dataDirAbsolute+'/backup/docker-compose.yml', port)
@@ -591,6 +601,7 @@ class MySQL:
 
     def __restoreIncrementalBackup(self, backup, dataDir):
         with tempfile.TemporaryDirectory(dir=dataDir) as tempDir:
+            self.output.info("Downloading "+backup.getName())
             self.__downloadAndExtract(backup, tempDir)
             completedProcess = subprocess.run([
                 'mariabackup',

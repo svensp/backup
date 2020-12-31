@@ -25,6 +25,7 @@ class MysqlRestoreCommand(Command):
             port = int(args.port[0])
 
         print("Restoring Backup "+backupName+" to "+dataDir)
+        self._mysql.setOutput(self)
         self._mysql.restore(backupName, dataDir, port)
         print("Restored Backup "+backupName)
 

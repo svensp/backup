@@ -17,8 +17,20 @@ class Command:
 
         self._shortDescription = shortDescription
         self._longDescription = longDescription
-            
+
 
     def printDescription(self):
         print(self._name+" - "+self._shortDescription)
         return self
+
+    def text(self, text):
+        print(text)
+
+    def info(self, text):
+        self.text("info: "+text)
+
+    def warning(self, text):
+        self.text("warning: "+text)
+
+    def error(self, text):
+        self.text("warning: "+text)
