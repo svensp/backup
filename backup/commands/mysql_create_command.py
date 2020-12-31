@@ -15,7 +15,7 @@ class MysqlCreateCommand(Command):
         resort = self._storage.findResort(resortName)
 
         print("Creating mysql for resort"+resortName)
-        resort.initMySQL();
+        resort.initMySQL()
         print("Created mysql for resort"+resortName)
 
     def printHelp(self):
