@@ -543,7 +543,7 @@ class MySQL:
     def __uploadBackup(self, backupDirectory, name):
         self._resort.adapter('mysql').upload(backupDirectory, name)
 
-    def getSpeciaBackups(self):
+    def getSpecialBackups(self):
         availableBackups = self.list()
 
         specialBackups = {}
@@ -551,6 +551,8 @@ class MySQL:
             specialNameFinder = self._specialNames[specialName]
             try:
                 specialBackups[specialName] = specialNameFinder.find(availableBackups)
+            except IndexError:
+                pass
             except KeyError:
                 pass
 

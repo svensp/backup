@@ -25,7 +25,7 @@ class MysqlListCommand(Command):
                 backup.printRecursive()
 
         print('Special names:')
-        specialNameBackups = self._mysql.getSpeciaBackups()
+        specialNameBackups = self._mysql.getSpecialBackups()
         for specialName in specialNameBackups:
             specialNameBackups[specialName].print(prefix=specialName+' ')
 
